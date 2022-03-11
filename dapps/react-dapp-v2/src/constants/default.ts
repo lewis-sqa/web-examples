@@ -37,6 +37,8 @@ export const DEFAULT_EIP155_METHODS = [
 
 export const DEFAULT_COSMOS_METHODS = ["cosmos_signDirect", "cosmos_signAmino"];
 
+export const DEFAULT_NEAR_METHODS = ["near_signTransaction"];
+
 export const DEFAULT_LOGGER = "debug";
 
 export const DEFAULT_APP_METADATA = {

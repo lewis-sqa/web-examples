@@ -12,6 +12,7 @@ import {
 } from "react";
 import {
   DEFAULT_APP_METADATA,
+  DEFAULT_NEAR_METHODS,
   DEFAULT_COSMOS_METHODS,
   DEFAULT_EIP155_METHODS,
   DEFAULT_LOGGER,
@@ -110,6 +111,8 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
             return DEFAULT_EIP155_METHODS;
           case "cosmos":
             return DEFAULT_COSMOS_METHODS;
+          case "near":
+            return DEFAULT_NEAR_METHODS;
           default:
             throw new Error(`No default methods for namespace: ${namespace}`);
         }

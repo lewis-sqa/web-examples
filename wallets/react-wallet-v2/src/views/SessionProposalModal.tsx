@@ -3,12 +3,14 @@ import ProjectInfoCard from '@/components/ProjectInfoCard'
 import RequesDetailsCard from '@/components/RequestDetalilsCard'
 import RequestMethodCard from '@/components/RequestMethodCard'
 import RequestModalContainer from '@/components/RequestModalContainer'
+import { NEAR_CHAINS, TNearChain } from "@/data/NEARData";
 import { COSMOS_MAINNET_CHAINS, TCosmosChain } from '@/data/COSMOSData'
 import { EIP155_CHAINS, TEIP155Chain } from '@/data/EIP155Data'
 import ModalStore from '@/store/ModalStore'
+import { nearAddresses } from '@/utils/NearWalletUtil'
 import { cosmosAddresses } from '@/utils/CosmosWalletUtil'
 import { eip155Addresses } from '@/utils/EIP155WalletUtil'
-import { isCosmosChain, isEIP155Chain } from '@/utils/HelperUtil'
+import { isNearChain, isCosmosChain, isEIP155Chain } from '@/utils/HelperUtil'
 import { walletConnectClient } from '@/utils/WalletConnectUtil'
 import { Button, Col, Divider, Modal, Row, Text } from '@nextui-org/react'
 import { Fragment, useState } from 'react'
@@ -16,6 +18,7 @@ import { Fragment, useState } from 'react'
 export default function SessionProposalModal() {
   const [selectedEIP155, setSelectedEip155] = useState<string[]>([])
   const [selectedCosmos, setSelectedCosmos] = useState<string[]>([])
+  const [selectedNear, setSelectedNear] = useState<string[]>([])
 
   // Get proposal data and wallet address from store
   const proposal = ModalStore.state.data?.proposal
@@ -50,10 +53,20 @@ export default function SessionProposalModal() {
     }
   }
 
+  // Add / remove address from NEAR selection
+  function onSelectNear(address: string) {
+    if (selectedNear.includes(address)) {
+      const newAddresses = selectedNear.filter(a => a !== address)
+      setSelectedNear(newAddresses)
+    } else {
+      setSelectedNear([...selectedCosmos, address])
+    }
+  }
+
   // Hanlde approve action
   async function onApprove() {
     if (proposal) {
-      const accounts = [...selectedEIP155, ...selectedCosmos]
+      const accounts = [...selectedEIP155, ...selectedCosmos, ...selectedNear]
       const response = {
         state: {
           accounts
@@ -130,6 +143,29 @@ export default function SessionProposalModal() {
                 </Row>
               </Fragment>
             )
+          } else if (isNearChain(chain)) {
+            return (
+              <Fragment>
+                <Divider y={2} />
+
+                <Row>
+                  <Col>
+                    <Text h5>
+                      {`Select ${NEAR_CHAINS[chain as TNearChain].name} Accounts`}
+                    </Text>
+                    {nearAddresses.map((address, index) => (
+                      <AccountSelectCard
+                        key={address}
+                        address={address}
+                        index={index}
+                        onSelect={() => onSelectNear(`${chain}:${address}`)}
+                        selected={selectedNear.includes(`${chain}:${address}`)}
+                      />
+                    ))}
+                  </Col>
+                </Row>
+              </Fragment>
+            )
           }
         })}
       </RequestModalContainer>
@@ -144,8 +180,8 @@ export default function SessionProposalModal() {
           flat
           color="success"
           onClick={onApprove}
-          disabled={![...selectedEIP155, ...selectedCosmos].length}
-          css={{ opacity: [...selectedEIP155, ...selectedCosmos].length ? 1 : 0.4 }}
+          disabled={![...selectedEIP155, ...selectedCosmos, ...selectedNear].length}
+          css={{ opacity: [...selectedEIP155, ...selectedCosmos, ...selectedNear].length ? 1 : 0.4 }}
         >
           Approve
         </Button>

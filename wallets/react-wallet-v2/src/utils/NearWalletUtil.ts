@@ -1,0 +1,1 @@
+export const nearAddresses: string[] = ["lewis-sqa.testnet"];

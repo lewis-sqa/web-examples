@@ -83,3 +83,10 @@ export function isEIP155Chain(chain: string) {
 export function isCosmosChain(chain: string) {
   return chain.includes('cosmos')
 }
+
+/**
+ * Check if chain is part of NEAR standard
+ */
+export function isNearChain(chain: string) {
+  return chain.includes('near')
+}
