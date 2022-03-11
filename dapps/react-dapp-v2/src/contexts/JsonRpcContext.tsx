@@ -35,6 +35,9 @@ type TRpcRequestCallback = (chainId: string, address: string) => Promise<void>;
 
 interface IContext {
   ping: () => Promise<void>;
+  nearRpc: {
+    testSignAndSendTransaction: TRpcRequestCallback;
+  };
   ethereumRpc: {
     testSendTransaction: TRpcRequestCallback;
     testSignTransaction: TRpcRequestCallback;
