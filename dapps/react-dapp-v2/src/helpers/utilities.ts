@@ -208,5 +208,7 @@ export const getAllChainNamespaces = () => {
       namespaces.push(namespace);
     }
   });
+  console.log("namespaces:", namespaces)
+
   return namespaces;
 };

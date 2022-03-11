@@ -76,8 +76,42 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       namespaces.map(async namespace => {
         let chains: ChainsMap | undefined;
         try {
-          chains = await apiGetChainNamespace(namespace);
+          if (namespace === "near") {
+            chains = {
+              "mainnet": {
+                "name": "NEAR Mainnet",
+                "id": "near:mainnet",
+                "rpc": [
+                  "https://rpc.mainnet.near.org"
+                ],
+                "slip44": 397,
+                "testnet": false
+              },
+              "testnet": {
+                "name": "NEAR Testnet",
+                "id": "near:testnet",
+                "rpc": [
+                  "https://rpc.testnet.near.org"
+                ],
+                "slip44": 397,
+                "testnet": true
+              },
+              "betanet": {
+                "name": "NEAR Betanet",
+                "id": "near:betanet",
+                "rpc": [
+                  "https://rpc.betanet.near.org"
+                ],
+                "slip44": 397,
+                "testnet": true
+              },
+            }
+          } else {
+            chains = await apiGetChainNamespace(namespace);
+          }
+          console.log("chains", chains);
         } catch (e) {
+          console.log("FAILURE", e);
           // ignore error
         }
         if (typeof chains !== "undefined") {
