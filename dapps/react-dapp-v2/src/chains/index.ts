@@ -9,7 +9,6 @@ import { ChainMetadata, ChainRequestRender } from "../helpers";
 
 export function getChainMetadata(chainId: string): ChainMetadata {
   const namespace = chainId.split(":")[0];
-  console.log("namespace:", namespace)
   switch (namespace) {
     case "eip155":
       return eip155.getChainMetadata(chainId);

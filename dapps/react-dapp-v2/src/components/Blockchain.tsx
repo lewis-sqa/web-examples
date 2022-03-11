@@ -117,7 +117,6 @@ const Blockchain: FC<PropsWithChildren<BlockchainProps>> = (
   props: PropsWithChildren<BlockchainProps>,
 ) => {
   const { chainData, fetching, chainId, address, onClick, active, balances, actions } = props;
-  console.log("Hello", chainData)
   if (!Object.keys(chainData).length) return null;
   const chain = getBlockchainDisplayData(chainId, chainData);
   if (typeof chain === "undefined") return null;

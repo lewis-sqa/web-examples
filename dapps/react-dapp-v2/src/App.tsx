@@ -168,7 +168,6 @@ export default function App() {
 
   const renderContent = () => {
     const chainOptions = isTestnet ? DEFAULT_TEST_CHAINS : DEFAULT_MAIN_CHAINS;
-    console.log("chainOptions", chainOptions)
     return !accounts.length && !Object.keys(balances).length ? (
       <SLanding center>
         <Banner />

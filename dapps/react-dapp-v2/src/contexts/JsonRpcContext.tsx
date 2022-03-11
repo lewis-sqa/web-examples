@@ -109,9 +109,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           } else {
             chains = await apiGetChainNamespace(namespace);
           }
-          console.log("chains", chains);
         } catch (e) {
-          console.log("FAILURE", e);
           // ignore error
         }
         if (typeof chains !== "undefined") {
