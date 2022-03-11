@@ -14,6 +14,7 @@ import {
 import { useWalletConnectClient } from "./ClientContext";
 import { apiGetChainNamespace, ChainsMap } from "caip-api";
 import { TypedDataField } from "@ethersproject/abstract-signer";
+import { NearChains } from "../chains/near";
 
 /**
  * Types
@@ -77,35 +78,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
         let chains: ChainsMap | undefined;
         try {
           if (namespace === "near") {
-            chains = {
-              "mainnet": {
-                "name": "NEAR Mainnet",
-                "id": "near:mainnet",
-                "rpc": [
-                  "https://rpc.mainnet.near.org"
-                ],
-                "slip44": 397,
-                "testnet": false
-              },
-              "testnet": {
-                "name": "NEAR Testnet",
-                "id": "near:testnet",
-                "rpc": [
-                  "https://rpc.testnet.near.org"
-                ],
-                "slip44": 397,
-                "testnet": true
-              },
-              "betanet": {
-                "name": "NEAR Betanet",
-                "id": "near:betanet",
-                "rpc": [
-                  "https://rpc.betanet.near.org"
-                ],
-                "slip44": 397,
-                "testnet": true
-              },
-            }
+            chains = NearChains;
           } else {
             chains = await apiGetChainNamespace(namespace);
           }

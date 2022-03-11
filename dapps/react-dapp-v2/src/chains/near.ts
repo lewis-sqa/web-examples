@@ -19,6 +19,36 @@ export const NearMetadata: NamespaceMetadata = {
   },
 };
 
+export const NearChains: ChainsMap = {
+  "mainnet": {
+    "name": "NEAR Mainnet",
+    "id": "near:mainnet",
+    "rpc": [
+      "https://rpc.mainnet.near.org"
+    ],
+    "slip44": 397,
+    "testnet": false
+  },
+  "testnet": {
+    "name": "NEAR Testnet",
+    "id": "near:testnet",
+    "rpc": [
+      "https://rpc.testnet.near.org"
+    ],
+    "slip44": 397,
+    "testnet": true
+  },
+  "betanet": {
+    "name": "NEAR Betanet",
+    "id": "near:betanet",
+    "rpc": [
+      "https://rpc.betanet.near.org"
+    ],
+    "slip44": 397,
+    "testnet": true
+  },
+};
+
 export function getChainMetadata(chainId: string): ChainMetadata {
   const reference = chainId.split(":")[1];
   const metadata = NearMetadata[reference];
