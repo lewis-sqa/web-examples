@@ -151,6 +151,39 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
     }
   };
 
+  // -------- NEAR RPC METHODS --------
+
+  const nearRpc = {
+    testSignAndSendTransaction: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
+      const result = await client!.request({
+        topic: session!.topic,
+        chainId,
+        request: {
+          method: "near_signAndSendTransaction",
+          params: {
+            receiverId: "guest-book.testnet",
+            actions: [{
+              type: "FunctionCall",
+              params: {
+                methodName: "addMessage",
+                args: { text: "Hello World!" },
+                gas: "30000000000000",
+                deposit: "10000000000000000000000",
+              }
+            }]
+          },
+        },
+      });
+
+      return {
+        method: "near_signAndSendTransaction",
+        address,
+        valid: true,
+        result,
+      };
+    }),
+  };
+
   // -------- ETHEREUM/EIP155 RPC METHODS --------
 
   const ethereumRpc = {
@@ -456,6 +489,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       value={{
         chainData,
         ping,
+        nearRpc,
         ethereumRpc,
         cosmosRpc,
         rpcResult: result,

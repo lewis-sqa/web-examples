@@ -1,4 +1,5 @@
 import SettingsStore from '@/store/SettingsStore'
+import { createOrRestoreNearWallet } from '@/utils/NearWalletUtil'
 import { createOrRestoreCosmosWallet } from '@/utils/CosmosWalletUtil'
 import { createOrRestoreEIP155Wallet } from '@/utils/EIP155WalletUtil'
 import { createWalletConnectClient } from '@/utils/WalletConnectUtil'
@@ -11,9 +12,11 @@ export default function useInitialization() {
     try {
       const { eip155Addresses } = createOrRestoreEIP155Wallet()
       const { cosmosAddresses } = await createOrRestoreCosmosWallet()
+      const { nearAddresses } = await createOrRestoreNearWallet()
 
       SettingsStore.setEIP155Address(eip155Addresses[0])
       SettingsStore.setCosmosAddress(cosmosAddresses[0])
+      SettingsStore.setNearAddress(nearAddresses[0] || '')
 
       await createWalletConnectClient()
 

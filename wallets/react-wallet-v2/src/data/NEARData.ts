@@ -44,5 +44,5 @@ export const NEAR_CHAINS = { ...NEAR_MAINNET_CHAINS, ...NEAR_TEST_CHAINS }
  * Methods
  */
 export const NEAR_SIGNING_METHODS = {
-  ETH_SIGN_AND_SEND_TRANSACTION: 'near_signAndSendTransaction',
+  NEAR_SIGN_AND_SEND_TRANSACTION: 'near_signAndSendTransaction',
 }

@@ -50,7 +50,7 @@ export default function App() {
   } = useWalletConnectClient();
 
   // Use `JsonRpcContext` to provide us with relevant RPC methods and states.
-  const { chainData, ping, ethereumRpc, cosmosRpc, isRpcRequestPending, rpcResult } = useJsonRpc();
+  const { chainData, ping, nearRpc, ethereumRpc, cosmosRpc, isRpcRequestPending, rpcResult } = useJsonRpc();
 
   // Close the pairing modal after a session is established.
   useEffect(() => {
@@ -122,6 +122,16 @@ export default function App() {
     ];
   };
 
+  const getNearActions = (): AccountAction[] => {
+    const onSignAndSendTransaction = async (chainId: string, address: string) => {
+      openRequestModal();
+      await nearRpc.testSignAndSendTransaction(chainId, address);
+    };
+    return [
+      { method: "near_signAndSendTransaction", callback: onSignAndSendTransaction },
+    ];
+  };
+
   const getBlockchainActions = (chainId: string) => {
     const [namespace] = chainId.split(":");
     switch (namespace) {
@@ -129,6 +139,8 @@ export default function App() {
         return getEthereumActions();
       case "cosmos":
         return getCosmosActions();
+      case "near":
+        return getNearActions();
       default:
         break;
     }
