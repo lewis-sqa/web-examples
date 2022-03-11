@@ -1,20 +1,19 @@
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-
-import { BLOCKCHAIN_LOGO_BASE_URL } from "../constants";
+import { ChainsMap } from "caip-api";
 
 import { NamespaceMetadata, ChainMetadata, ChainRequestRender } from "../helpers";
 
 export const NearMetadata: NamespaceMetadata = {
   "mainnet": {
-    logo: BLOCKCHAIN_LOGO_BASE_URL + "near:mainnet.png",
+    logo: "https://avatars.githubusercontent.com/u/7613128?s=200&v=4",
     rgb: "27, 31, 53",
   },
   "testnet": {
-    logo: BLOCKCHAIN_LOGO_BASE_URL + "near:testnet.png",
+    logo: "https://avatars.githubusercontent.com/u/7613128?s=200&v=4",
     rgb: "27, 31, 53",
   },
   "betanet": {
-    logo: BLOCKCHAIN_LOGO_BASE_URL + "near:betanet.png",
+    logo: "https://avatars.githubusercontent.com/u/7613128?s=200&v=4",
     rgb: "27, 31, 53",
   },
 };
