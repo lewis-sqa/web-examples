@@ -1,4 +1,5 @@
 import { utils } from 'ethers'
+import { generateSeedPhrase } from "near-seed-phrase";
 
 /**
  * Truncates string (in the middle) via given lenght value
@@ -68,6 +69,12 @@ export function getWalletAddressFromParams(addresses: string[], params: any) {
   })
 
   return address
+}
+
+export function generateMnemonic(): string {
+  const { seedPhrase } = generateSeedPhrase();
+
+  return seedPhrase;
 }
 
 /**
