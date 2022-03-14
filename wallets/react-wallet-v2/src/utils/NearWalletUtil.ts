@@ -25,7 +25,7 @@ export async function createOrRestoreNearWallet(mnemonic: string) {
     utils.KeyPair.fromString(keyPair1.secretKey)
   );
 
-  const keyPair2 = parseSeedPhrase(mnemonic, "m/44'/397'/0'/0'/0'");
+  const keyPair2 = parseSeedPhrase(mnemonic, "m/44'/397'/0'/0'/1'");
   const account2 = getImplicitAccountId(keyPair2.publicKey);
   await localStorageKeyStore.setKey(
     nearNetworkId,
