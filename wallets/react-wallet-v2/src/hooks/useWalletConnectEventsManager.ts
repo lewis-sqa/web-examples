@@ -1,3 +1,4 @@
+import { NEAR_SIGNING_METHODS } from '@/data/NEARData'
 import { COSMOS_SIGNING_METHODS } from '@/data/COSMOSData'
 import { EIP155_SIGNING_METHODS } from '@/data/EIP155Data'
 import ModalStore from '@/store/ModalStore'
