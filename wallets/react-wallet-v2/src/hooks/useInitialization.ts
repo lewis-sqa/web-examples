@@ -26,7 +26,7 @@ export default function useInitialization() {
 
       SettingsStore.setEIP155Address(eip155Addresses[0])
       SettingsStore.setCosmosAddress(cosmosAddresses[0])
-      SettingsStore.setNearAddress(nearAddresses[0] || '')
+      SettingsStore.setNearAddress(nearAddresses[0])
 
       await createWalletConnectClient()
 
