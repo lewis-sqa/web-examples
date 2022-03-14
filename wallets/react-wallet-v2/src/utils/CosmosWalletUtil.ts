@@ -26,8 +26,6 @@ export async function createOrRestoreCosmosWallet(mnemonic: string) {
   }
   cosmosAddresses = Object.keys(cosmosWallets)
 
-  console.log("cosmosAddresses", cosmosAddresses)
-
   return {
     cosmosWallets,
     cosmosAddresses
