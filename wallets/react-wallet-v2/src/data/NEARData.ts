@@ -14,7 +14,7 @@ export type TNearChain = keyof typeof NEAR_CHAINS
 export const NEAR_MAINNET_CHAINS = {
   'near:mainnet': {
     chainId: 'mainnet',
-    name: 'NEAR (Mainnet)',
+    name: 'NEAR',
     logo: '/chain-logos/near.png',
     rgb: '99, 125, 234',
     rpc: 'https://rpc.mainnet.near.org'
@@ -24,17 +24,10 @@ export const NEAR_MAINNET_CHAINS = {
 export const NEAR_TEST_CHAINS = {
   'near:testnet': {
     chainId: 'testnet',
-    name: 'NEAR (Testnet)',
+    name: 'NEAR Testnet',
     logo: '/chain-logos/near.png',
     rgb: '99, 125, 234',
     rpc: 'https://rpc.testnet.near.org'
-  },
-  'near:betanet': {
-    chainId: 'betanet',
-    name: 'NEAR (Betanet)',
-    logo: '/chain-logos/near.png',
-    rgb: '99, 125, 234',
-    rpc: 'https://rpc.betanet.near.org'
   },
 }
 
