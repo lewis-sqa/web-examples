@@ -3,9 +3,11 @@ import PageHeader from '@/components/PageHeader'
 import ProjectInfoCard from '@/components/ProjectInfoCard'
 import { COSMOS_MAINNET_CHAINS, TCosmosChain } from '@/data/COSMOSData'
 import { EIP155_CHAINS, TEIP155Chain } from '@/data/EIP155Data'
+import { NEAR_CHAINS, TNearChain } from '@/data/NEARData'
 import { cosmosAddresses } from '@/utils/CosmosWalletUtil'
 import { eip155Addresses } from '@/utils/EIP155WalletUtil'
-import { isCosmosChain, isEIP155Chain } from '@/utils/HelperUtil'
+import { isCosmosChain, isEIP155Chain, isNearChain } from '@/utils/HelperUtil'
+import { nearAddresses } from '@/utils/NearWalletUtil'
 import { walletConnectClient } from '@/utils/WalletConnectUtil'
 import { Button, Col, Divider, Row, Text } from '@nextui-org/react'
 import { ERROR } from '@walletconnect/utils'
@@ -114,6 +116,34 @@ export default function SessionPage() {
                 <Col>
                   <Text h5>{`${COSMOS_MAINNET_CHAINS[chain as TCosmosChain].name} Accounts`}</Text>
                   {cosmosAddresses.map((address, index) => {
+                    const fullAddress = `${chain}:${address}`
+                    const selected = accounts.includes(fullAddress)
+
+                    return (
+                      <AccountSelectCard
+                        key={address}
+                        address={address}
+                        index={index}
+                        onSelect={() =>
+                          selected ? onDeleteAccount(fullAddress) : onAddAccount(fullAddress)
+                        }
+                        selected={selected}
+                      />
+                    )
+                  })}
+                </Col>
+              </Row>
+            </Fragment>
+          )
+        } else if (isNearChain(chain)) {
+          return (
+            <Fragment key={chain}>
+              <Divider y={2} />
+
+              <Row>
+                <Col>
+                  <Text h5>{`${NEAR_CHAINS[chain as TNearChain].name} Accounts`}</Text>
+                  {nearAddresses.map((address, index) => {
                     const fullAddress = `${chain}:${address}`
                     const selected = accounts.includes(fullAddress)
 

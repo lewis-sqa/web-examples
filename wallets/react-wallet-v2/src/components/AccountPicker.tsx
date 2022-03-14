@@ -1,4 +1,5 @@
 import SettingsStore from '@/store/SettingsStore'
+import { nearAddresses } from '@/utils/NearWalletUtil'
 import { cosmosAddresses } from '@/utils/CosmosWalletUtil'
 import { eip155Addresses } from '@/utils/EIP155WalletUtil'
 import { useSnapshot } from 'valtio'
@@ -11,6 +12,7 @@ export default function AccountPicker() {
     SettingsStore.setAccount(account)
     SettingsStore.setEIP155Address(eip155Addresses[account])
     SettingsStore.setCosmosAddress(cosmosAddresses[account])
+    SettingsStore.setNearAddress(nearAddresses[account])
   }
 
   return (
