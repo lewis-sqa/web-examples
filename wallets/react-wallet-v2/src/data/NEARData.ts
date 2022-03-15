@@ -12,13 +12,7 @@ export type TNearChain = keyof typeof NEAR_CHAINS
  * Chains
  */
 export const NEAR_MAINNET_CHAINS = {
-  'near:mainnet': {
-    chainId: 'mainnet',
-    name: 'NEAR',
-    logo: '/chain-logos/near.png',
-    rgb: '99, 125, 234',
-    rpc: 'https://rpc.mainnet.near.org'
-  },
+  // TODO: Dev account creation isn't supported on NEAR Mainnet.
 }
 
 export const NEAR_TEST_CHAINS = {

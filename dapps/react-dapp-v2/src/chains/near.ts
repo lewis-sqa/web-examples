@@ -4,44 +4,18 @@ import { ChainsMap } from "caip-api";
 import { NamespaceMetadata, ChainMetadata, ChainRequestRender } from "../helpers";
 
 export const NearMetadata: NamespaceMetadata = {
-  "mainnet": {
-    logo: "https://avatars.githubusercontent.com/u/7613128?s=200&v=4",
-    rgb: "27, 31, 53",
-  },
   "testnet": {
     logo: "https://avatars.githubusercontent.com/u/7613128?s=200&v=4",
     rgb: "27, 31, 53",
-  },
-  "betanet": {
-    logo: "https://avatars.githubusercontent.com/u/7613128?s=200&v=4",
-    rgb: "27, 31, 53",
-  },
+  }
 };
 
 export const NearChains: ChainsMap = {
-  "mainnet": {
-    "name": "NEAR Mainnet",
-    "id": "near:mainnet",
-    "rpc": [
-      "https://rpc.mainnet.near.org"
-    ],
-    "slip44": 397,
-    "testnet": false
-  },
   "testnet": {
     "name": "NEAR Testnet",
     "id": "near:testnet",
     "rpc": [
       "https://rpc.testnet.near.org"
-    ],
-    "slip44": 397,
-    "testnet": true
-  },
-  "betanet": {
-    "name": "NEAR Betanet",
-    "id": "near:betanet",
-    "rpc": [
-      "https://rpc.betanet.near.org"
     ],
     "slip44": 397,
     "testnet": true
