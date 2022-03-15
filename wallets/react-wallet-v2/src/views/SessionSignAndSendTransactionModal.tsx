@@ -48,7 +48,7 @@ export default function SessionSignAndSendTransactionModal() {
 
   return (
     <Fragment>
-      <RequestModalContainer title="Sign Message">
+      <RequestModalContainer title="Sign And Send Transaction">
         <ProjectInfoCard metadata={requestSession.peer.metadata} />
 
         <Divider y={2} />

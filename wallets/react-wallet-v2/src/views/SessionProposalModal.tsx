@@ -59,7 +59,7 @@ export default function SessionProposalModal() {
       const newAddresses = selectedNear.filter(a => a !== address)
       setSelectedNear(newAddresses)
     } else {
-      setSelectedNear([...selectedCosmos, address])
+      setSelectedNear([...selectedNear, address])
     }
   }
 
