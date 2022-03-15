@@ -3,7 +3,7 @@ import { createOrRestoreNearWallet } from '@/utils/NearWalletUtil'
 import { createOrRestoreCosmosWallet } from '@/utils/CosmosWalletUtil'
 import { createOrRestoreEIP155Wallet } from '@/utils/EIP155WalletUtil'
 import { createWalletConnectClient } from '@/utils/WalletConnectUtil'
-import { generateMnemonic } from "@/utils/HelperUtil";
+import MnemonicKeyring from "mnemonic-keyring";
 import { useCallback, useEffect, useState } from 'react'
 
 export default function useInitialization() {
@@ -14,7 +14,8 @@ export default function useInitialization() {
       let mnemonic = localStorage.getItem('WALLET_MNEMONIC');
 
       if (!mnemonic) {
-        mnemonic = generateMnemonic() as string;
+        const keyring = await MnemonicKeyring.init({});
+        mnemonic = keyring.mnemonic;
 
         // Don't store mnemonic in local storage in a production project!
         localStorage.setItem('WALLET_MNEMONIC', mnemonic)
@@ -22,7 +23,7 @@ export default function useInitialization() {
 
       const { eip155Addresses } = createOrRestoreEIP155Wallet(mnemonic)
       const { cosmosAddresses } = await createOrRestoreCosmosWallet(mnemonic)
-      const { nearAddresses } = await createOrRestoreNearWallet(mnemonic)
+      const { nearAddresses } = await createOrRestoreNearWallet()
 
       SettingsStore.setEIP155Address(eip155Addresses[0])
       SettingsStore.setCosmosAddress(cosmosAddresses[0])
