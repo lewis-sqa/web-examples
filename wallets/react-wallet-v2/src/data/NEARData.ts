@@ -1,5 +1,5 @@
 /**
- * @desc Refference list of eip155 chains
+ * @desc Reference list of NEAR chains
  * @url https://chainlist.org
  */
 

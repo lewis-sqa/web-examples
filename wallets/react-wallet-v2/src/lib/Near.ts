@@ -100,7 +100,7 @@ export class NearWallet {
   }
 
   private transformActions(actions: any) {
-    if (!actions.every((x) => x.type === "FunctionCall")) {
+    if (!actions.every((x: any) => x.type === "FunctionCall")) {
       throw new Error("Invalid actions");
     }
 
@@ -130,26 +130,26 @@ export class NearWallet {
   }
 
   async signAndSendTransaction({ chainId, receiverId, actions }: SignAndSendTransactionParams) {
-    console.log("Signing transaction with", {
-      chainId,
-      receiverId,
-      actions
-    });
+    const accountId = this.getAccountId();
+    const publicKey = this.getPublicKey();
+    const networkId = this.near.connection.networkId;
+    const provider = new providers.JsonRpcProvider(
+      NEAR_CHAINS[chainId as TNearChain].rpc
+    );
 
-    const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
     const [block, accessKey] = await Promise.all([
       provider.block({ finality: "final" }),
       provider.query<AccessKeyView>({
         request_type: "view_access_key",
         finality: "final",
-        account_id: this.account.accountId,
-        public_key: this.account.publicKey,
+        account_id: accountId,
+        public_key: publicKey,
       }),
     ]);
 
     const transaction = transactions.createTransaction(
-      this.getAccountId(),
-      utils.PublicKey.from(this.getPublicKey()),
+      accountId,
+      utils.PublicKey.from(publicKey),
       receiverId,
       accessKey.nonce + 1,
       this.transformActions(actions),
@@ -163,8 +163,8 @@ export class NearWallet {
 
     const signature = await this.near.connection.signer.signMessage(
       serializedTx,
-      this.getAccountId(),
-      this.near.connection.networkId
+      accountId,
+      networkId
     );
 
     const signedTx = new transactions.SignedTransaction({
