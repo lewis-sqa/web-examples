@@ -161,12 +161,13 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
         request: {
           method: "near_signAndSendTransaction",
           params: {
+            signerId: address,
             receiverId: "guest-book.testnet",
             actions: [{
               type: "FunctionCall",
               params: {
                 methodName: "addMessage",
-                args: { text: "Hello World!" },
+                args: { text: "Hello from Wallet Connect!" },
                 gas: "30000000000000",
                 deposit: "10000000000000000000000",
               }
