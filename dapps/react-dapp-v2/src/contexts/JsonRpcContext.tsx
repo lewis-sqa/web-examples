@@ -169,7 +169,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
                 methodName: "addMessage",
                 args: { text: "Hello from Wallet Connect!" },
                 gas: "30000000000000",
-                deposit: "10000000000000000000000",
+                deposit: "0",
               }
             }]
           },
