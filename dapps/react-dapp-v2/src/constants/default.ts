@@ -35,7 +35,13 @@ export const DEFAULT_EIP155_METHODS = [
 
 export const DEFAULT_COSMOS_METHODS = ["cosmos_signDirect", "cosmos_signAmino"];
 
-export const DEFAULT_NEAR_METHODS = ["near_signAndSendTransaction"];
+export const DEFAULT_NEAR_METHODS = [
+  "near_requestSignIn",
+  "near_isSignedIn",
+  "near_signOut",
+  "near_signTransaction",
+  "near_signAndSendTransaction"
+];
 
 export const DEFAULT_LOGGER = "debug";
 

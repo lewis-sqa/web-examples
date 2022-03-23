@@ -9,7 +9,7 @@ import { walletConnectClient } from '@/utils/WalletConnectUtil'
 import { Button, Divider, Modal, Text } from '@nextui-org/react'
 import { Fragment } from 'react'
 
-export default function SessionSignAndSendTransactionModal() {
+export default function SessionNearModal() {
   // Get request and wallet data from store
   const requestEvent = ModalStore.state.data?.requestEvent
   const requestSession = ModalStore.state.data?.requestSession
@@ -48,7 +48,7 @@ export default function SessionSignAndSendTransactionModal() {
 
   return (
     <Fragment>
-      <RequestModalContainer title="Sign And Send Transaction">
+      <RequestModalContainer title="NEAR">
         <ProjectInfoCard metadata={requestSession.peer.metadata} />
 
         <Divider y={2} />

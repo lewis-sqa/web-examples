@@ -20,7 +20,7 @@ interface State {
     | 'SessionSendTransactionModal'
     | 'SessionUnsuportedMethodModal'
     | 'SessionSignCosmosModal'
-    | 'SessionSignAndSendTransactionModal'
+    | 'SessionNearModal'
   data?: ModalData
 }
 

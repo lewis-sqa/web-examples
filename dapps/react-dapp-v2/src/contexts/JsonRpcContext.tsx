@@ -36,6 +36,7 @@ type TRpcRequestCallback = (chainId: string, address: string) => Promise<void>;
 interface IContext {
   ping: () => Promise<void>;
   nearRpc: {
+    testRequestSignIn: TRpcRequestCallback;
     testSignAndSendTransaction: TRpcRequestCallback;
   };
   ethereumRpc: {
@@ -154,6 +155,27 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   // -------- NEAR RPC METHODS --------
 
   const nearRpc = {
+    testRequestSignIn: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
+      const result = await client!.request({
+        topic: session!.topic,
+        chainId,
+        request: {
+          method: "near_requestSignIn",
+          params: {
+            signerId: address,
+            contractId: "guest-book.testnet",
+            methodNames: ["addMessage"]
+          },
+        },
+      });
+
+      return {
+        method: "near_requestSignIn",
+        address,
+        valid: true,
+        result,
+      };
+    }),
     testSignAndSendTransaction: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
       const result = await client!.request({
         topic: session!.topic,

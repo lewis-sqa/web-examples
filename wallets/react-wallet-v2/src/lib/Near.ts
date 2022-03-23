@@ -11,6 +11,11 @@ import BN from "bn.js";
 
 import { NEAR_CHAINS, TNearChain } from "@/data/NEARData";
 
+interface RequestSignInParams {
+  contractId: string;
+  methodNames?: Array<string>;
+}
+
 interface SignAndSendTransactionParams {
   chainId: string;
   receiverId: string;
@@ -30,8 +35,10 @@ const getJsonItem = <Value extends unknown>(path: string) => {
 }
 
 export class NearWallet {
+  private derivationPath: string;
   private near: Near;
   private account: Account;
+  private accessKeys: Array<string>;
 
   static async init(derivationPath: string) {
     const networkId = "testnet";
@@ -61,7 +68,9 @@ export class NearWallet {
       utils.KeyPair.fromString(account.privateKey)
     );
 
-    return new NearWallet(near, account);
+    const accessKeys = getJsonItem<Array<string>>(`WALLET_NEAR_ACCESS_KEYS:${derivationPath}`) || [] ;
+
+    return new NearWallet(derivationPath, near, account, accessKeys);
   }
 
   static async createDevAccount() {
@@ -94,9 +103,11 @@ export class NearWallet {
       });
   }
 
-  private constructor(near: Near, account: Account) {
+  private constructor(derivationPath: string, near: Near, account: Account, accessKeys: Array<string>) {
+    this.derivationPath = derivationPath;
     this.near = near;
     this.account = account;
+    this.accessKeys = accessKeys;
   }
 
   private transformActions(actions: any) {
@@ -111,6 +122,25 @@ export class NearWallet {
         new BN(gas),
         new BN(deposit))
     })
+  }
+
+  async requestSignIn({ contractId, methodNames }: RequestSignInParams) {
+    const account = await this.near.account(this.account.accountId);
+    const keyPair = utils.KeyPair.fromRandom("ed25519");
+
+    await account.addKey(keyPair.getPublicKey(), contractId, methodNames);
+
+    const accessKeys = [
+      ...this.accessKeys,
+      keyPair.getPublicKey().toString()
+    ];
+
+    localStorage.setItem(
+      `WALLET_NEAR_ACCESS_KEYS:${this.derivationPath}`,
+      JSON.stringify(accessKeys)
+    );
+
+    this.accessKeys = accessKeys;
   }
 
   getAccountId() {
