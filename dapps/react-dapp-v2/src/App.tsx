@@ -127,12 +127,17 @@ export default function App() {
       openRequestModal();
       await nearRpc.testRequestSignIn(chainId, address);
     };
+    const onSignTransaction = async (chainId: string, address: string) => {
+      openRequestModal();
+      await nearRpc.testSignTransaction(chainId, address);
+    };
     const onSignAndSendTransaction = async (chainId: string, address: string) => {
       openRequestModal();
       await nearRpc.testSignAndSendTransaction(chainId, address);
     };
     return [
       { method: "near_requestSignIn", callback: onRequestSignIn },
+      { method: "near_signTransaction", callback: onSignTransaction },
       { method: "near_signAndSendTransaction", callback: onSignAndSendTransaction },
     ];
   };

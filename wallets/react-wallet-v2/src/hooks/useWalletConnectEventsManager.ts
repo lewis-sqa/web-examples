@@ -47,6 +47,7 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
         return ModalStore.open('SessionSignCosmosModal', { requestEvent, requestSession })
 
       case NEAR_SIGNING_METHODS.NEAR_REQUEST_SIGN_IN:
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTION:
       case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION:
         return ModalStore.open('SessionNearModal', { requestEvent, requestSession })
 

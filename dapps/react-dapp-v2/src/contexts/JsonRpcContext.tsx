@@ -37,6 +37,7 @@ interface IContext {
   ping: () => Promise<void>;
   nearRpc: {
     testRequestSignIn: TRpcRequestCallback;
+    testSignTransaction: TRpcRequestCallback;
     testSignAndSendTransaction: TRpcRequestCallback;
   };
   ethereumRpc: {
@@ -171,6 +172,35 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
 
       return {
         method: "near_requestSignIn",
+        address,
+        valid: true,
+        result,
+      };
+    }),
+    testSignTransaction: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
+      const result = await client!.request({
+        topic: session!.topic,
+        chainId,
+        request: {
+          method: "near_signTransaction",
+          params: {
+            signerId: address,
+            receiverId: "guest-book.testnet",
+            actions: [{
+              type: "FunctionCall",
+              params: {
+                methodName: "addMessage",
+                args: { text: "Hello from Wallet Connect!" },
+                gas: "30000000000000",
+                deposit: "0",
+              }
+            }]
+          },
+        },
+      });
+
+      return {
+        method: "near_signTransaction",
         address,
         valid: true,
         result,

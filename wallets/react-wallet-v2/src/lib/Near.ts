@@ -16,11 +16,13 @@ interface RequestSignInParams {
   methodNames?: Array<string>;
 }
 
-interface SignAndSendTransactionParams {
+interface SignTransactionParams {
   chainId: string;
   receiverId: string;
   actions: Array<any>;
 }
+
+type SignAndSendTransactionParams = SignTransactionParams;
 
 interface Account {
   accountId: string;
@@ -159,7 +161,7 @@ export class NearWallet {
     });
   }
 
-  async signAndSendTransaction({ chainId, receiverId, actions }: SignAndSendTransactionParams) {
+  async signTransaction({ chainId, receiverId, actions }: SignTransactionParams) {
     const accountId = this.getAccountId();
     const publicKey = this.getPublicKey();
     const networkId = this.near.connection.networkId;
@@ -197,13 +199,20 @@ export class NearWallet {
       networkId
     );
 
-    const signedTx = new transactions.SignedTransaction({
+    return new transactions.SignedTransaction({
       transaction,
       signature: new transactions.Signature({
         keyType: transaction.publicKey.keyType,
         data: signature.signature,
       }),
     });
+  }
+
+  async signAndSendTransaction({ chainId, receiverId, actions }: SignAndSendTransactionParams) {
+    const signedTx = await this.signTransaction({ chainId, receiverId, actions });
+    const provider = new providers.JsonRpcProvider(
+      NEAR_CHAINS[chainId as TNearChain].rpc
+    );
 
     return provider.sendTransaction(signedTx);
   }
