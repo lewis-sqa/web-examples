@@ -1,25 +1,20 @@
 import { NearWallet } from "@/lib/Near";
 
-export let nearWallets: Record<string, NearWallet>;
 export let nearAddresses: string[];
+export let nearWallet: NearWallet;
 
 /**
  * Utilities
  */
 export async function createOrRestoreNearWallet() {
-  const [wallet1, wallet2] = await Promise.all([
-    NearWallet.init("m/44'/397'/0'/0'/0'"),
-    NearWallet.init("m/44'/397'/0'/0'/1'")
-  ]);
+  const wallet = await NearWallet.init();
+  const accounts = wallet.getAccounts();
 
-  nearWallets = {
-    [wallet1.getAccountId()]: wallet1,
-    [wallet2.getAccountId()]: wallet2,
-  };
-  nearAddresses = [wallet1.getAccountId(), wallet2.getAccountId()];
+  nearAddresses = accounts.map((x) => x.accountId);
+  nearWallet = wallet;
 
   return {
-    nearWallets,
+    nearWallet,
     nearAddresses
   }
 }

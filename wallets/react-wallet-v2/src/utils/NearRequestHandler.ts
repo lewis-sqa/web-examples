@@ -2,24 +2,23 @@ import { NEAR_SIGNING_METHODS } from '@/data/NEARData'
 import { formatJsonRpcError, formatJsonRpcResult } from '@json-rpc-tools/utils'
 import { RequestEvent } from '@walletconnect/types'
 import { ERROR } from '@walletconnect/utils'
-import { nearAddresses, nearWallets } from '@/utils/NearWalletUtil'
-import { getWalletAddressFromParams } from "@/utils/HelperUtil";
+import { nearWallet } from '@/utils/NearWalletUtil'
 
 export async function approveNearRequest(requestEvent: RequestEvent) {
   const { method, params, id } = requestEvent.request
   const { chainId } = requestEvent
-  const wallet = nearWallets[getWalletAddressFromParams(nearAddresses, params)]
 
   switch (method) {
     case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
-      console.log("approve", {method, params, id});
+      console.log("approve", { method, params, id });
 
       if (!chainId) {
         throw new Error("Invalid chain id");
       }
 
-      const res = await wallet.signAndSendTransaction({
+      const res = await nearWallet.signAndSendTransaction({
         chainId,
+        signerId: params.signerId,
         receiverId: params.receiverId,
         actions: params.actions
       });
@@ -33,7 +32,7 @@ export async function approveNearRequest(requestEvent: RequestEvent) {
         throw new Error("Invalid chain id");
       }
 
-      const res = await wallet.signAndSendTransactions({
+      const res = await nearWallet.signAndSendTransactions({
         chainId,
         transactions: params.transactions,
       });

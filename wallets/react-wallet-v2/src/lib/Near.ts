@@ -13,6 +13,7 @@ import { NEAR_CHAINS, TNearChain } from "@/data/NEARData";
 import { SignedTransaction } from "near-api-js/lib/transaction";
 
 interface Transaction {
+  signerId: string;
   receiverId: string;
   actions: Array<any>;
 }
@@ -24,6 +25,7 @@ interface SignTransactionsParams {
 
 interface SignAndSendTransactionParams {
   chainId: string;
+  signerId: string;
   receiverId: string;
   actions: Array<any>;
 }
@@ -39,6 +41,11 @@ interface Account {
   privateKey: string;
 }
 
+const DERIVATION_PATHS = [
+  "m/44'/397'/0'/0'/0'",
+  "m/44'/397'/0'/0'/1'"
+];
+
 const getJsonItem = <Value extends unknown>(path: string) => {
   const item = localStorage.getItem(path);
 
@@ -46,12 +53,10 @@ const getJsonItem = <Value extends unknown>(path: string) => {
 }
 
 export class NearWallet {
-  private derivationPath: string;
   private near: Near;
-  private account: Account;
-  private accessKeys: Array<string>;
+  private accounts: Array<Account>;
 
-  static async init(derivationPath: string) {
+  static async init() {
     const networkId = "testnet";
     const keyStore = new keyStores.InMemoryKeyStore();
     const near = await connect({
@@ -62,26 +67,30 @@ export class NearWallet {
       headers: {}
     });
 
-    let account = getJsonItem<Account>(`WALLET_NEAR_ACCOUNT:${derivationPath}`);
+    let accounts: Array<Account> = [];
+    for (let i = 0; i < DERIVATION_PATHS.length; i += 1) {
+      const derivationPath = DERIVATION_PATHS[i];
+      let account = getJsonItem<Account>(`WALLET_NEAR_ACCOUNT:${derivationPath}`);
 
-    if (!account) {
-      account = await NearWallet.createDevAccount();
+      if (!account) {
+        account = await NearWallet.createDevAccount();
 
-      localStorage.setItem(
-        `WALLET_NEAR_ACCOUNT:${derivationPath}`,
-        JSON.stringify(account)
+        localStorage.setItem(
+          `WALLET_NEAR_ACCOUNT:${derivationPath}`,
+          JSON.stringify(account)
+        );
+      }
+
+      await keyStore.setKey(
+        networkId,
+        account.accountId,
+        utils.KeyPair.fromString(account.privateKey)
       );
+
+      accounts.push(account);
     }
 
-    await keyStore.setKey(
-      networkId,
-      account.accountId,
-      utils.KeyPair.fromString(account.privateKey)
-    );
-
-    const accessKeys = getJsonItem<Array<string>>(`WALLET_NEAR_ACCESS_KEYS:${derivationPath}`) || [] ;
-
-    return new NearWallet(derivationPath, near, account, accessKeys);
+    return new NearWallet(near, accounts);
   }
 
   static async createDevAccount() {
@@ -114,11 +123,9 @@ export class NearWallet {
       });
   }
 
-  private constructor(derivationPath: string, near: Near, account: Account, accessKeys: Array<string>) {
-    this.derivationPath = derivationPath;
+  private constructor(near: Near, accounts: Array<Account>) {
     this.near = near;
-    this.account = account;
-    this.accessKeys = accessKeys;
+    this.accounts = accounts;
   }
 
   getAccessKey(permission: any) {
@@ -165,48 +172,40 @@ export class NearWallet {
     });
   }
 
-  getAccountId() {
-    return this.account.accountId;
-  }
-
-  getPublicKey() {
-    return this.account.publicKey;
-  }
-
-  async getAccount() {
-    return this.near.connection.provider.query({
-      request_type: "view_account",
-      finality: "optimistic",
-      account_id: this.getAccountId()
-    });
+  getAccounts() {
+    return this.accounts;
   }
 
   async signTransactions({ chainId, transactions }: SignTransactionsParams) {
-    const accountId = this.getAccountId();
-    const publicKey = this.getPublicKey();
     const networkId = this.near.connection.networkId;
     const provider = new providers.JsonRpcProvider(
       NEAR_CHAINS[chainId as TNearChain].rpc
     );
 
-    const [block, accessKey] = await Promise.all([
-      provider.block({ finality: "final" }),
-      provider.query<AccessKeyView>({
-        request_type: "view_access_key",
-        finality: "final",
-        account_id: accountId,
-        public_key: publicKey,
-      }),
-    ]);
-
     const signedTxs: Array<SignedTransaction> = [];
 
     for (let i = 0; i < transactions.length; i += 1) {
-      const { receiverId, actions } = transactions[i];
+      const { signerId, receiverId, actions } = transactions[i];
+
+      const account = this.accounts.find((x) => x.accountId === signerId);
+
+      if (!account) {
+        throw new Error("Invalid signer id");
+      }
+
+      const [block, accessKey] = await Promise.all([
+        provider.block({ finality: "final" }),
+        provider.query<AccessKeyView>({
+          request_type: "view_access_key",
+          finality: "final",
+          account_id: account.accountId,
+          public_key: account.publicKey,
+        }),
+      ]);
 
       const transaction = nearTransactions.createTransaction(
-        accountId,
-        utils.PublicKey.from(publicKey),
+        account.accountId,
+        utils.PublicKey.from(account.publicKey),
         receiverId,
         accessKey.nonce + 1,
         this.transformActions(actions),
@@ -220,7 +219,7 @@ export class NearWallet {
 
       const signature = await this.near.connection.signer.signMessage(
         serializedTx,
-        accountId,
+        account.accountId,
         networkId
       );
 
@@ -238,10 +237,11 @@ export class NearWallet {
     return signedTxs;
   }
 
-  async signAndSendTransaction({ chainId, receiverId, actions }: SignAndSendTransactionParams) {
+  async signAndSendTransaction({ chainId, signerId, receiverId, actions }: SignAndSendTransactionParams) {
     const [signedTx] = await this.signTransactions({
       chainId,
       transactions: [{
+        signerId,
         receiverId,
         actions
       }]
