@@ -1,7 +1,7 @@
 import {
   connect,
   keyStores,
-  transactions,
+  transactions as nearTransactions,
   providers,
   utils,
   Near
@@ -10,19 +10,28 @@ import { AccessKeyView } from "near-api-js/lib/providers/provider";
 import BN from "bn.js";
 
 import { NEAR_CHAINS, TNearChain } from "@/data/NEARData";
+import { SignedTransaction } from "near-api-js/lib/transaction";
 
-interface RequestSignInParams {
-  contractId: string;
-  methodNames?: Array<string>;
+interface Transaction {
+  receiverId: string;
+  actions: Array<any>;
 }
 
-interface SignTransactionParams {
+interface SignTransactionsParams {
+  chainId: string;
+  transactions: Array<Transaction>;
+}
+
+interface SignAndSendTransactionParams {
   chainId: string;
   receiverId: string;
   actions: Array<any>;
 }
 
-type SignAndSendTransactionParams = SignTransactionParams;
+interface SignAndSendTransactionsParams {
+  chainId: string;
+  transactions: Array<Transaction>;
+}
 
 interface Account {
   accountId: string;
@@ -114,7 +123,7 @@ export class NearWallet {
 
   getAccessKey(permission: any) {
     if (permission === "FullAccess") {
-      return transactions.fullAccessKey();
+      return nearTransactions.fullAccessKey();
     }
 
     const { receiverId, methodNames = [] } = permission;
@@ -122,7 +131,7 @@ export class NearWallet {
       ? new BN(permission.allowance)
       : undefined;
 
-    return transactions.functionCallAccessKey(receiverId, methodNames, allowance);
+    return nearTransactions.functionCallAccessKey(receiverId, methodNames, allowance);
   }
 
   private transformActions(actions: any) {
@@ -131,7 +140,7 @@ export class NearWallet {
         case "FunctionCall": {
           const { methodName, args, gas, deposit } = action.params;
 
-          return transactions.functionCall(methodName,
+          return nearTransactions.functionCall(methodName,
             args,
             new BN(gas),
             new BN(deposit));
@@ -139,7 +148,7 @@ export class NearWallet {
         case "AddKey": {
           const { publicKey, accessKey } = action.params;
 
-          return transactions.addKey(
+          return nearTransactions.addKey(
             utils.PublicKey.from(publicKey),
             this.getAccessKey(accessKey.permission)
           );
@@ -147,32 +156,13 @@ export class NearWallet {
         case "DeleteKey": {
           const { publicKey } = action.params;
 
-          return transactions.deleteKey(
+          return nearTransactions.deleteKey(
             utils.PublicKey.from(publicKey)
           );
         }
         default: throw new Error("Invalid action");
       }
     });
-  }
-
-  async requestSignIn({ contractId, methodNames }: RequestSignInParams) {
-    const account = await this.near.account(this.account.accountId);
-    const keyPair = utils.KeyPair.fromRandom("ed25519");
-
-    await account.addKey(keyPair.getPublicKey(), contractId, methodNames);
-
-    const accessKeys = [
-      ...this.accessKeys,
-      keyPair.getPublicKey().toString()
-    ];
-
-    localStorage.setItem(
-      `WALLET_NEAR_ACCESS_KEYS:${this.derivationPath}`,
-      JSON.stringify(accessKeys)
-    );
-
-    this.accessKeys = accessKeys;
   }
 
   getAccountId() {
@@ -191,7 +181,7 @@ export class NearWallet {
     });
   }
 
-  async signTransaction({ chainId, receiverId, actions }: SignTransactionParams) {
+  async signTransactions({ chainId, transactions }: SignTransactionsParams) {
     const accountId = this.getAccountId();
     const publicKey = this.getPublicKey();
     const networkId = this.near.connection.networkId;
@@ -209,41 +199,68 @@ export class NearWallet {
       }),
     ]);
 
-    const transaction = transactions.createTransaction(
-      accountId,
-      utils.PublicKey.from(publicKey),
-      receiverId,
-      accessKey.nonce + 1,
-      this.transformActions(actions),
-      utils.serialize.base_decode(block.header.hash)
-    );
+    const signedTxs: Array<SignedTransaction> = [];
 
-    const serializedTx = utils.serialize.serialize(
-      transactions.SCHEMA,
-      transaction
-    );
+    for (let i = 0; i < transactions.length; i += 1) {
+      const { receiverId, actions } = transactions[i];
 
-    const signature = await this.near.connection.signer.signMessage(
-      serializedTx,
-      accountId,
-      networkId
-    );
+      const transaction = nearTransactions.createTransaction(
+        accountId,
+        utils.PublicKey.from(publicKey),
+        receiverId,
+        accessKey.nonce + 1,
+        this.transformActions(actions),
+        utils.serialize.base_decode(block.header.hash)
+      );
 
-    return new transactions.SignedTransaction({
-      transaction,
-      signature: new transactions.Signature({
-        keyType: transaction.publicKey.keyType,
-        data: signature.signature,
-      }),
-    });
+      const serializedTx = utils.serialize.serialize(
+        nearTransactions.SCHEMA,
+        transaction
+      );
+
+      const signature = await this.near.connection.signer.signMessage(
+        serializedTx,
+        accountId,
+        networkId
+      );
+
+      signedTxs.push(
+        new nearTransactions.SignedTransaction({
+          transaction,
+          signature: new nearTransactions.Signature({
+            keyType: transaction.publicKey.keyType,
+            data: signature.signature,
+          }),
+        })
+      );
+    }
+
+    return signedTxs;
   }
 
   async signAndSendTransaction({ chainId, receiverId, actions }: SignAndSendTransactionParams) {
-    const signedTx = await this.signTransaction({ chainId, receiverId, actions });
+    const [signedTx] = await this.signTransactions({
+      chainId,
+      transactions: [{
+        receiverId,
+        actions
+      }]
+    });
     const provider = new providers.JsonRpcProvider(
       NEAR_CHAINS[chainId as TNearChain].rpc
     );
 
     return provider.sendTransaction(signedTx);
+  }
+
+  async signAndSendTransactions({ chainId, transactions }: SignAndSendTransactionsParams) {
+    const signedTxs = await this.signTransactions({ chainId, transactions });
+    const provider = new providers.JsonRpcProvider(
+      NEAR_CHAINS[chainId as TNearChain].rpc
+    );
+
+    return Promise.all(
+      signedTxs.map((signedTx) => provider.sendTransaction(signedTx))
+    );
   }
 }
