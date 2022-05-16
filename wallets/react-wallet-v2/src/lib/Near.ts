@@ -112,18 +112,48 @@ export class NearWallet {
     this.accessKeys = accessKeys;
   }
 
-  private transformActions(actions: any) {
-    if (!actions.every((x: any) => x.type === "FunctionCall")) {
-      throw new Error("Invalid actions");
+  getAccessKey(permission: any) {
+    if (permission === "FullAccess") {
+      return transactions.fullAccessKey();
     }
 
+    const { receiverId, methodNames = [] } = permission;
+    const allowance = permission.allowance
+      ? new BN(permission.allowance)
+      : undefined;
+
+    return transactions.functionCallAccessKey(receiverId, methodNames, allowance);
+  }
+
+  private transformActions(actions: any) {
     return actions.map((action: any) => {
-      const { methodName, args, gas, deposit } = action.params;
-      return transactions.functionCall(methodName,
-        args,
-        new BN(gas),
-        new BN(deposit))
-    })
+      switch (action.type) {
+        case "FunctionCall": {
+          const { methodName, args, gas, deposit } = action.params;
+
+          return transactions.functionCall(methodName,
+            args,
+            new BN(gas),
+            new BN(deposit));
+        }
+        case "AddKey": {
+          const { publicKey, accessKey } = action.params;
+
+          return transactions.addKey(
+            utils.PublicKey.from(publicKey),
+            this.getAccessKey(accessKey.permission)
+          );
+        }
+        case "DeleteKey": {
+          const { publicKey } = action.params;
+
+          return transactions.deleteKey(
+            utils.PublicKey.from(publicKey)
+          );
+        }
+        default: throw new Error("Invalid action");
+      }
+    });
   }
 
   async requestSignIn({ contractId, methodNames }: RequestSignInParams) {
