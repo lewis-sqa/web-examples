@@ -45,13 +45,10 @@ export enum DEFAULT_SOLANA_METHODS {
   SOL_SIGN_MESSAGE = "solana_signMessage",
 }
 
-export const DEFAULT_NEAR_METHODS = [
-  "near_requestSignIn",
-  "near_isSignedIn",
-  "near_signOut",
-  "near_signTransaction",
-  "near_signAndSendTransaction"
-];
+export enum DEFAULT_NEAR_METHODS {
+  NEAR_SIGN_AND_SEND_TRANSACTION = "near_signAndSendTransaction",
+  NEAR_SIGN_AND_SEND_TRANSACTIONS = "near_signAndSendTransactions",
+}
 
 export const DEFAULT_LOGGER = "debug";
 

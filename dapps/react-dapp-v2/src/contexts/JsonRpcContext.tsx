@@ -59,9 +59,8 @@ interface IContext {
     testSignTransaction: TRpcRequestCallback;
   };
   nearRpc: {
-    testRequestSignIn: TRpcRequestCallback;
-    testSignTransaction: TRpcRequestCallback;
     testSignAndSendTransaction: TRpcRequestCallback;
+    testSignAndSendTransactions: TRpcRequestCallback;
   };
   rpcResult?: IFormattedRpcResponse | null;
   isRpcRequestPending: boolean;
@@ -542,62 +541,12 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   // -------- NEAR RPC METHODS --------
 
   const nearRpc = {
-    testRequestSignIn: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
-      const result = await client!.request({
-        topic: session!.topic,
-        chainId,
-        request: {
-          method: "near_requestSignIn",
-          params: {
-            signerId: address,
-            contractId: "guest-book.testnet",
-            methodNames: ["addMessage"]
-          },
-        },
-      });
-
-      return {
-        method: "near_requestSignIn",
-        address,
-        valid: true,
-        result,
-      };
-    }),
-    testSignTransaction: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
-      const result = await client!.request({
-        topic: session!.topic,
-        chainId,
-        request: {
-          method: "near_signTransaction",
-          params: {
-            signerId: address,
-            receiverId: "guest-book.testnet",
-            actions: [{
-              type: "FunctionCall",
-              params: {
-                methodName: "addMessage",
-                args: { text: "Hello from Wallet Connect!" },
-                gas: "30000000000000",
-                deposit: "0",
-              }
-            }]
-          },
-        },
-      });
-
-      return {
-        method: "near_signTransaction",
-        address,
-        valid: true,
-        result,
-      };
-    }),
     testSignAndSendTransaction: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
       const result = await client!.request({
         topic: session!.topic,
         chainId,
         request: {
-          method: "near_signAndSendTransaction",
+          method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION,
           params: {
             signerId: address,
             receiverId: "guest-book.testnet",
@@ -615,7 +564,38 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       });
 
       return {
-        method: "near_signAndSendTransaction",
+        method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION,
+        address,
+        valid: true,
+        result,
+      };
+    }),
+    testSignAndSendTransactions: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
+      const result = await client!.request({
+        topic: session!.topic,
+        chainId,
+        request: {
+          method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS,
+          params: {
+            transactions: [{
+              signerId: address,
+              receiverId: "guest-book.testnet",
+              actions: [{
+                type: "FunctionCall",
+                params: {
+                  methodName: "addMessage",
+                  args: {text: "Hello from Wallet Connect!"},
+                  gas: "30000000000000",
+                  deposit: "0",
+                }
+              }]
+            }],
+          }
+        },
+      });
+
+      return {
+        method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS,
         address,
         valid: true,
         result,

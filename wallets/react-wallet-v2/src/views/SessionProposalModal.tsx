@@ -22,7 +22,7 @@ export default function SessionProposalModal() {
   const [selectedCosmos, setSelectedCosmos] = useState<string[]>([])
   const [selectedSolana, setSelectedSolana] = useState<string[]>([])
   const [selectedNear, setSelectedNear] = useState<string[]>([])
-  const allSelected = [...selectedEIP155, ...selectedCosmos, ...selectedSolana, selectedNear]
+  const allSelected = [...selectedEIP155, ...selectedCosmos, ...selectedSolana, ...selectedNear]
 
   // Get proposal data and wallet address from store
   const proposal = ModalStore.state.data?.proposal
