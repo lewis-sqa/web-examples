@@ -41,11 +41,6 @@ interface Account {
   privateKey: string;
 }
 
-const DERIVATION_PATHS = [
-  "m/44'/397'/0'/0'/0'",
-  "m/44'/397'/0'/0'/1'"
-];
-
 const getJsonItem = <Value extends unknown>(path: string) => {
   const item = localStorage.getItem(path);
 
@@ -68,17 +63,13 @@ export class NearWallet {
     });
 
     let accounts: Array<Account> = [];
-    for (let i = 0; i < DERIVATION_PATHS.length; i += 1) {
-      const derivationPath = DERIVATION_PATHS[i];
-      let account = getJsonItem<Account>(`WALLET_NEAR_ACCOUNT:${derivationPath}`);
+    for (let i = 1; i <= 2; i += 1) {
+      let account = getJsonItem<Account>(`NEAR_ACCOUNT_${i}`);
 
       if (!account) {
         account = await NearWallet.createDevAccount();
 
-        localStorage.setItem(
-          `WALLET_NEAR_ACCOUNT:${derivationPath}`,
-          JSON.stringify(account)
-        );
+        localStorage.setItem(`NEAR_ACCOUNT_${i}`, JSON.stringify(account));
       }
 
       await keyStore.setKey(
