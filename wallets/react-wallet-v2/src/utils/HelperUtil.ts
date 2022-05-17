@@ -85,6 +85,13 @@ export function isCosmosChain(chain: string) {
 }
 
 /**
+ * Check if chain is part of SOLANA standard
+ */
+export function isSolanaChain(chain: string) {
+  return chain.includes('solana')
+}
+
+/**
  * Check if chain is part of NEAR standard
  */
 export function isNearChain(chain: string) {

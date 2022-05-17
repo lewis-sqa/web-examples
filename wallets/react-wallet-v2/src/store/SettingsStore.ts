@@ -8,6 +8,7 @@ interface State {
   account: number
   eip155Address: string
   cosmosAddress: string
+  solanaAddress: string
   nearAddress: string
 }
 
@@ -19,6 +20,7 @@ const state = proxy<State>({
   account: 0,
   eip155Address: '',
   cosmosAddress: '',
+  solanaAddress: '',
   nearAddress: ''
 })
 
@@ -38,6 +40,10 @@ const SettingsStore = {
 
   setCosmosAddress(cosmosAddresses: string) {
     state.cosmosAddress = cosmosAddresses
+  },
+
+  setSolanaAddress(solanaAddress: string) {
+    state.solanaAddress = solanaAddress
   },
 
   setNearAddress(nearAddresses: string) {

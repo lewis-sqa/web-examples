@@ -4,6 +4,7 @@ import SessionSendTransactionModal from '@/views/SessionSendTransactionModal'
 import SessionSignCosmosModal from '@/views/SessionSignCosmosModal'
 import SessionNearModal from '@/views/SessionNearModal'
 import SessionRequestModal from '@/views/SessionSignModal'
+import SessionSignSolanaModal from '@/views/SessionSignSolanaModal'
 import SessionSignTypedDataModal from '@/views/SessionSignTypedDataModal'
 import SessionUnsuportedMethodModal from '@/views/SessionUnsuportedMethodModal'
 import { Modal as NextModal } from '@nextui-org/react'
@@ -20,6 +21,7 @@ export default function Modal() {
       {view === 'SessionSendTransactionModal' && <SessionSendTransactionModal />}
       {view === 'SessionUnsuportedMethodModal' && <SessionUnsuportedMethodModal />}
       {view === 'SessionSignCosmosModal' && <SessionSignCosmosModal />}
+      {view === 'SessionSignSolanaModal' && <SessionSignSolanaModal />}
       {view === 'SessionNearModal' && <SessionNearModal />}
     </NextModal>
   )

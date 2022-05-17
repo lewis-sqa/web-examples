@@ -10,6 +10,8 @@ import {
   useMemo,
   useState,
 } from "react";
+import { PublicKey } from "@solana/web3.js";
+
 import {
   DEFAULT_APP_METADATA,
   DEFAULT_NEAR_METHODS,
@@ -18,9 +20,11 @@ import {
   DEFAULT_LOGGER,
   DEFAULT_PROJECT_ID,
   DEFAULT_RELAY_URL,
+  DEFAULT_SOLANA_METHODS,
 } from "../constants";
 import { AccountBalances, apiGetAccountBalance } from "../helpers";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
+import { getPublicKeysFromAccounts } from "../helpers/solana";
 
 /**
  * Types
@@ -34,6 +38,7 @@ interface IContext {
   chains: string[];
   pairings: string[];
   accounts: string[];
+  solanaPublicKeys?: Record<string, PublicKey>;
   balances: AccountBalances;
   isFetchingBalances: boolean;
   setChains: any;
@@ -57,9 +62,10 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
   const [balances, setBalances] = useState<AccountBalances>({});
   const [accounts, setAccounts] = useState<string[]>([]);
+  const [solanaPublicKeys, setSolanaPublicKeys] = useState<Record<string, PublicKey>>();
   const [chains, setChains] = useState<string[]>([]);
 
-  const resetApp = () => {
+  const reset = () => {
     setPairings([]);
     setSession(undefined);
     setBalances({});
@@ -108,11 +114,13 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       .map(namespace => {
         switch (namespace) {
           case "eip155":
-            return DEFAULT_EIP155_METHODS;
+            return Object.values(DEFAULT_EIP155_METHODS);
           case "cosmos":
-            return DEFAULT_COSMOS_METHODS;
+            return Object.values(DEFAULT_COSMOS_METHODS);
+          case "solana":
+            return Object.values(DEFAULT_SOLANA_METHODS);
           case "near":
-            return DEFAULT_NEAR_METHODS;
+            return Object.values(DEFAULT_NEAR_METHODS);
           default:
             throw new Error(`No default methods for namespace: ${namespace}`);
         }
@@ -122,11 +130,12 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     return supportedMethods;
   };
 
-  const onSessionConnected = useCallback(async (incomingSession: SessionTypes.Settled) => {
-    setSession(incomingSession);
-    setChains(incomingSession.permissions.blockchain.chains);
-    setAccounts(incomingSession.state.accounts);
-    await getAccountBalances(incomingSession.state.accounts);
+  const onSessionConnected = useCallback(async (_session: SessionTypes.Settled) => {
+    setSession(_session);
+    setChains(_session.permissions.blockchain.chains);
+    setAccounts(_session.state.accounts);
+    setSolanaPublicKeys(getPublicKeysFromAccounts(_session.state.accounts));
+    await getAccountBalances(_session.state.accounts);
   }, []);
 
   const connect = useCallback(
@@ -138,6 +147,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       try {
         const supportedNamespaces = getSupportedNamespaces();
         const methods = getSupportedMethods(supportedNamespaces);
+
         const session = await client.connect({
           metadata: getAppMetadata() || DEFAULT_APP_METADATA,
           pairing,
@@ -201,7 +211,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
       _client.on(CLIENT_EVENTS.session.deleted, () => {
         console.log("EVENT", "session_deleted");
-        resetApp();
+        reset();
       });
     },
     [onSessionConnected],
@@ -257,6 +267,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       balances,
       isFetchingBalances,
       accounts,
+      solanaPublicKeys,
       chains,
       client,
       session,
@@ -270,6 +281,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       balances,
       isFetchingBalances,
       accounts,
+      solanaPublicKeys,
       chains,
       client,
       session,

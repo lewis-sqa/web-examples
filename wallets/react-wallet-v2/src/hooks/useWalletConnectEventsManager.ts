@@ -1,6 +1,7 @@
-import { NEAR_SIGNING_METHODS } from '@/data/NEARData'
 import { COSMOS_SIGNING_METHODS } from '@/data/COSMOSData'
 import { EIP155_SIGNING_METHODS } from '@/data/EIP155Data'
+import { SOLANA_SIGNING_METHODS } from '@/data/SolanaData'
+import { NEAR_SIGNING_METHODS } from '@/data/NEARData'
 import ModalStore from '@/store/ModalStore'
 import { walletConnectClient } from '@/utils/WalletConnectUtil'
 import { CLIENT_EVENTS } from '@walletconnect/client'
@@ -45,6 +46,10 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
       case COSMOS_SIGNING_METHODS.COSMOS_SIGN_DIRECT:
       case COSMOS_SIGNING_METHODS.COSMOS_SIGN_AMINO:
         return ModalStore.open('SessionSignCosmosModal', { requestEvent, requestSession })
+
+      case SOLANA_SIGNING_METHODS.SOLANA_SIGN_MESSAGE:
+      case SOLANA_SIGNING_METHODS.SOLANA_SIGN_TRANSACTION:
+        return ModalStore.open('SessionSignSolanaModal', { requestEvent, requestSession })
 
       case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION:
       case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS:
