@@ -15,12 +15,12 @@ export function getChainMetadata(chainId: string): ChainMetadata {
       return eip155.getChainMetadata(chainId);
     case "cosmos":
       return cosmos.getChainMetadata(chainId);
-    case "near":
-      return near.getChainMetadata(chainId);
     case "polkadot":
       return polkadot.getChainMetadata(chainId);
     case "solana":
       return solana.getChainMetadata(chainId);
+    case "near":
+      return near.getChainMetadata(chainId);
     default:
       throw new Error(`No metadata handler for namespace ${namespace}`);
   }

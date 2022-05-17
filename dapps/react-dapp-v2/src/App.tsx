@@ -11,6 +11,7 @@ import {
   DEFAULT_EIP155_METHODS,
   DEFAULT_MAIN_CHAINS,
   DEFAULT_SOLANA_METHODS,
+  DEFAULT_NEAR_METHODS,
   DEFAULT_TEST_CHAINS,
 } from "./constants";
 import { AccountAction, setLocaleStorageTestnetFlag } from "./helpers";
@@ -155,22 +156,17 @@ export default function App() {
   };
 
   const getNearActions = (): AccountAction[] => {
-    const onRequestSignIn = async (chainId: string, address: string) => {
-      openRequestModal();
-      await nearRpc.testRequestSignIn(chainId, address);
-    };
-    const onSignTransaction = async (chainId: string, address: string) => {
-      openRequestModal();
-      await nearRpc.testSignTransaction(chainId, address);
-    };
     const onSignAndSendTransaction = async (chainId: string, address: string) => {
       openRequestModal();
       await nearRpc.testSignAndSendTransaction(chainId, address);
     };
+    const onSignAndSendTransactions = async (chainId: string, address: string) => {
+      openRequestModal();
+      await nearRpc.testSignAndSendTransactions(chainId, address);
+    };
     return [
-      { method: "near_requestSignIn", callback: onRequestSignIn },
-      { method: "near_signTransaction", callback: onSignTransaction },
-      { method: "near_signAndSendTransaction", callback: onSignAndSendTransaction },
+      { method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION, callback: onSignAndSendTransaction },
+      { method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS, callback: onSignAndSendTransactions },
     ];
   };
 

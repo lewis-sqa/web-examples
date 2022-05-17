@@ -14,13 +14,13 @@ import { PublicKey } from "@solana/web3.js";
 
 import {
   DEFAULT_APP_METADATA,
-  DEFAULT_NEAR_METHODS,
   DEFAULT_COSMOS_METHODS,
   DEFAULT_EIP155_METHODS,
   DEFAULT_LOGGER,
   DEFAULT_PROJECT_ID,
   DEFAULT_RELAY_URL,
   DEFAULT_SOLANA_METHODS,
+  DEFAULT_NEAR_METHODS,
 } from "../constants";
 import { AccountBalances, apiGetAccountBalance } from "../helpers";
 import { ERROR, getAppMetadata } from "@walletconnect/utils";
