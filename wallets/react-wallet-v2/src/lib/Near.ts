@@ -7,10 +7,10 @@ import {
   Near
 } from "near-api-js";
 import { AccessKeyView } from "near-api-js/lib/providers/provider";
+import { SignedTransaction } from "near-api-js/lib/transaction";
 import BN from "bn.js";
 
 import { NEAR_CHAINS, TNearChain } from "@/data/NEARData";
-import { SignedTransaction } from "near-api-js/lib/transaction";
 
 interface Transaction {
   signerId: string;
