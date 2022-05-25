@@ -9,6 +9,38 @@ export async function approveNearRequest(requestEvent: RequestEvent) {
   const { chainId } = requestEvent
 
   switch (method) {
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTION: {
+      console.log("approve", { method, params, id });
+
+      if (!chainId) {
+        throw new Error("Invalid chain id");
+      }
+
+      const [signedTx] = await nearWallet.signTransactions({
+        chainId,
+        transactions: [{
+          signerId: params.signerId,
+          receiverId: params.receiverId,
+          actions: params.actions
+        }]
+      });
+
+      return formatJsonRpcResult(id, signedTx);
+    }
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTIONS: {
+      console.log("approve", { method, params, id });
+
+      if (!chainId) {
+        throw new Error("Invalid chain id");
+      }
+
+      const signedTxs = await nearWallet.signTransactions({
+        chainId,
+        transactions: params.transactions
+      });
+
+      return formatJsonRpcResult(id, signedTxs);
+    }
     case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
       console.log("approve", { method, params, id });
 

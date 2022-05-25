@@ -51,6 +51,10 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
       case SOLANA_SIGNING_METHODS.SOLANA_SIGN_TRANSACTION:
         return ModalStore.open('SessionSignSolanaModal', { requestEvent, requestSession })
 
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTION:
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTIONS:
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_IN:
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_OUT:
       case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION:
       case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS:
         return ModalStore.open('SessionNearModal', { requestEvent, requestSession })
