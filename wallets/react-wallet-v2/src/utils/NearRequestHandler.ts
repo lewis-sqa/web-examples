@@ -25,7 +25,7 @@ export async function approveNearRequest(requestEvent: RequestEvent) {
         }]
       });
 
-      return formatJsonRpcResult(id, signedTx);
+      return formatJsonRpcResult(id, signedTx.encode());
     }
     case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTIONS: {
       console.log("approve", { method, params, id });
@@ -39,7 +39,10 @@ export async function approveNearRequest(requestEvent: RequestEvent) {
         transactions: params.transactions
       });
 
-      return formatJsonRpcResult(id, signedTxs);
+      return formatJsonRpcResult(
+        id,
+        signedTxs.map((signedTx) => signedTx.encode())
+      );
     }
     case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
       console.log("approve", { method, params, id });
