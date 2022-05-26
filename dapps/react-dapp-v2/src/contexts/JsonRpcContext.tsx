@@ -59,8 +59,8 @@ interface IContext {
     testSignTransaction: TRpcRequestCallback;
   };
   nearRpc: {
-    testSignAndSendTransaction: TRpcRequestCallback;
-    testSignAndSendTransactions: TRpcRequestCallback;
+    testSignTransaction: TRpcRequestCallback;
+    testSignTransactions: TRpcRequestCallback;
   };
   rpcResult?: IFormattedRpcResponse | null;
   isRpcRequestPending: boolean;
@@ -541,12 +541,13 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   // -------- NEAR RPC METHODS --------
 
   const nearRpc = {
-    testSignAndSendTransaction: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
+    testSignTransaction: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
+      const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_TRANSACTION
       const result = await client!.request({
         topic: session!.topic,
         chainId,
         request: {
-          method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION,
+          method,
           params: {
             signerId: address,
             receiverId: "guest-book.testnet",
@@ -564,18 +565,19 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       });
 
       return {
-        method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION,
+        method,
         address,
         valid: true,
         result,
       };
     }),
-    testSignAndSendTransactions: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
+    testSignTransactions: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
+      const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_TRANSACTIONS
       const result = await client!.request({
         topic: session!.topic,
         chainId,
         request: {
-          method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS,
+          method,
           params: {
             transactions: [{
               signerId: address,
@@ -595,7 +597,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       });
 
       return {
-        method: DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS,
+        method,
         address,
         valid: true,
         result,
