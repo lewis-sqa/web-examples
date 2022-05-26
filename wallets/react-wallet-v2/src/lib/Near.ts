@@ -19,6 +19,11 @@ interface SignInParams {
   accounts: Array<{ accountId: string; publicKey: string; }>;
 }
 
+interface SignOutParams {
+  chainId: string;
+  accounts: Array<{ accountId: string; publicKey: string; }>;
+}
+
 interface Transaction {
   signerId: string;
   receiverId: string;
@@ -188,6 +193,23 @@ export class NearWallet {
               methodNames,
             },
           },
+        },
+      }],
+    }));
+
+    await this.signAndSendTransactions({ chainId, transactions });
+
+    return accounts
+  }
+
+  async signOut({ chainId, accounts }: SignOutParams) {
+    const transactions = accounts.map<Transaction>((x) => ({
+      signerId: x.accountId,
+      receiverId: x.accountId,
+      actions: [{
+        type: "DeleteKey",
+        params: {
+          publicKey: x.publicKey,
         },
       }],
     }));

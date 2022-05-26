@@ -60,35 +60,19 @@ export async function approveNearRequest(requestEvent: RequestEvent) {
 
       return formatJsonRpcResult(id, accounts);
     }
-    case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_OUT: {
       console.log("approve", { method, params, id });
 
       if (!chainId) {
         throw new Error("Invalid chain id");
       }
 
-      const res = await nearWallet.signAndSendTransaction({
+      const accounts = await nearWallet.signOut({
         chainId,
-        signerId: params.signerId,
-        receiverId: params.receiverId,
-        actions: params.actions
+        accounts: params.accounts
       });
 
-      return formatJsonRpcResult(id, res);
-    }
-    case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS: {
-      console.log("approve", { method, params, id });
-
-      if (!chainId) {
-        throw new Error("Invalid chain id");
-      }
-
-      const res = await nearWallet.signAndSendTransactions({
-        chainId,
-        transactions: params.transactions,
-      });
-
-      return formatJsonRpcResult(id, res);
+      return formatJsonRpcResult(id, accounts);
     }
     default:
       throw new Error(ERROR.UNKNOWN_JSONRPC_METHOD.format().message)
