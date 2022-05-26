@@ -35,6 +35,4 @@ export const NEAR_SIGNING_METHODS = {
   NEAR_SIGN_TRANSACTIONS: 'near_signTransactions',
   NEAR_SIGN_IN: 'near_signIn',
   NEAR_SIGN_OUT: 'near_signOut',
-  NEAR_SIGN_AND_SEND_TRANSACTION: 'near_signAndSendTransaction',
-  NEAR_SIGN_AND_SEND_TRANSACTIONS: 'near_signAndSendTransactions',
 }
