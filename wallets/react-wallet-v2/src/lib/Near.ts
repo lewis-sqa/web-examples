@@ -12,6 +12,13 @@ import BN from "bn.js";
 
 import { NEAR_CHAINS, TNearChain } from "@/data/NEARData";
 
+interface SignInParams {
+  chainId: string;
+  contractId: string;
+  methodNames: Array<string>;
+  accounts: Array<{ accountId: string; publicKey: string; }>;
+}
+
 interface Transaction {
   signerId: string;
   receiverId: string;
@@ -165,6 +172,29 @@ export class NearWallet {
 
   getAccounts() {
     return this.accounts;
+  }
+
+  async signIn({ chainId, contractId, methodNames, accounts }: SignInParams) {
+    const transactions = accounts.map<Transaction>((x) => ({
+      signerId: x.accountId,
+      receiverId: x.accountId,
+      actions: [{
+        type: "AddKey",
+        params: {
+          publicKey: x.publicKey,
+          accessKey: {
+            permission: {
+              receiverId: contractId,
+              methodNames,
+            },
+          },
+        },
+      }],
+    }));
+
+    await this.signAndSendTransactions({ chainId, transactions });
+
+    return accounts
   }
 
   async signTransactions({ chainId, transactions }: SignTransactionsParams) {
