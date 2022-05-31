@@ -20,7 +20,7 @@ interface State {
     | 'SessionUnsuportedMethodModal'
     | 'SessionSignCosmosModal'
     | 'SessionSignSolanaModal'
-    | 'SessionNearModal'
+    | 'SessionSignNearModal'
   data?: ModalData
 }
 

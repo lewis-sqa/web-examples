@@ -1,15 +1,15 @@
 import ProjectInfoCard from '@/components/ProjectInfoCard'
 import RequestDataCard from '@/components/RequestDataCard'
-import RequesDetailsCard from '@/components/RequestDetalilsCard'
+import RequestDetailsCard from '@/components/RequestDetalilsCard'
 import RequestMethodCard from '@/components/RequestMethodCard'
 import RequestModalContainer from '@/components/RequestModalContainer'
 import ModalStore from '@/store/ModalStore'
 import { approveNearRequest, rejectNearRequest } from '@/utils/NearRequestHandler'
-import { walletConnectClient } from '@/utils/WalletConnectUtil'
+import { signClient } from '@/utils/WalletConnectUtil'
 import { Button, Divider, Modal, Text } from '@nextui-org/react'
 import { Fragment } from 'react'
 
-export default function SessionNearModal() {
+export default function SessionSignNearModal() {
   // Get request and wallet data from store
   const requestEvent = ModalStore.state.data?.requestEvent
   const requestSession = ModalStore.state.data?.requestSession
@@ -20,14 +20,15 @@ export default function SessionNearModal() {
   }
 
   // Get required request data
-  const { method, params } = requestEvent.request
+  const { topic, params } = requestEvent
+  const { request, chainId } = params
 
   // Handle approve action (logic varies based on request method)
   async function onApprove() {
     if (requestEvent) {
       const response = await approveNearRequest(requestEvent)
-      await walletConnectClient.respond({
-        topic: requestEvent.topic,
+      await signClient.respond({
+        topic,
         response
       })
       ModalStore.close()
@@ -37,9 +38,9 @@ export default function SessionNearModal() {
   // Handle reject action
   async function onReject() {
     if (requestEvent) {
-      const response = rejectNearRequest(requestEvent.request)
-      await walletConnectClient.respond({
-        topic: requestEvent.topic,
+      const response = rejectNearRequest(requestEvent)
+      await signClient.respond({
+        topic,
         response
       })
       ModalStore.close()
@@ -53,8 +54,8 @@ export default function SessionNearModal() {
 
         <Divider y={2} />
 
-        <RequesDetailsCard
-          chains={[requestEvent.chainId ?? '']}
+        <RequestDetailsCard
+          chains={[chainId ?? '']}
           protocol={requestSession.relay.protocol}
         />
 
@@ -64,7 +65,7 @@ export default function SessionNearModal() {
 
         <Divider y={2} />
 
-        <RequestMethodCard methods={[method]} />
+        <RequestMethodCard methods={[request.method]} />
       </RequestModalContainer>
 
       <Modal.Footer>
