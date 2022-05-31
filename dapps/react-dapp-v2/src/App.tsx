@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { version } from "@walletconnect/client/package.json";
+import { version } from "@walletconnect/sign-client/package.json";
 
 import Banner from "./components/Banner";
 import Blockchain from "./components/Blockchain";
@@ -82,11 +82,12 @@ export default function App() {
       throw new Error("WalletConnect is not initialized");
     }
     // Suggest existing pairings (if any).
-    if (client.pairing.topics.length) {
-      return openPairingModal();
+    if (client.pairing.values.length) {
+      openPairingModal();
+    } else {
+      // If no existing pairings are available, trigger `WalletConnectClient.connect`.
+      connect();
     }
-    // If no existing pairings are available, trigger `WalletConnectClient.connect`.
-    connect();
   };
 
   const onPing = async () => {
@@ -223,9 +224,7 @@ export default function App() {
     return !accounts.length && !Object.keys(balances).length ? (
       <SLanding center>
         <Banner />
-        <h6>
-          <span>{`Using v${version || "2.0.0-beta"}`}</span>
-        </h6>
+        <h6>{`Using v${version || "2.0.0-beta"}`}</h6>
         <SButtonContainer>
           <h6>Select chains:</h6>
           <SToggleContainer>
@@ -270,8 +269,6 @@ export default function App() {
       </SAccountsContainer>
     );
   };
-
-  console.log(accounts);
 
   return (
     <SLayout>

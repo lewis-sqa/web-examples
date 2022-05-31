@@ -3,7 +3,7 @@ import { createOrRestoreNearWallet } from '@/utils/NearWalletUtil'
 import { createOrRestoreCosmosWallet } from '@/utils/CosmosWalletUtil'
 import { createOrRestoreEIP155Wallet } from '@/utils/EIP155WalletUtil'
 import { createOrRestoreSolanaWallet } from '@/utils/SolanaWalletUtil'
-import { createWalletConnectClient } from '@/utils/WalletConnectUtil'
+import { createSignClient } from '@/utils/WalletConnectUtil'
 import { useCallback, useEffect, useState } from 'react'
 
 export default function useInitialization() {
@@ -21,7 +21,7 @@ export default function useInitialization() {
       SettingsStore.setSolanaAddress(solanaAddresses[0])
       SettingsStore.setNearAddress(nearAddresses[0])
 
-      await createWalletConnectClient()
+      await createSignClient()
 
       setInitialized(true)
     } catch (err: unknown) {
