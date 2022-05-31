@@ -6,6 +6,7 @@ import { Button, Divider, Loading, Row, Text } from '@nextui-org/react'
 import { ERROR } from '@walletconnect/utils'
 import { useRouter } from 'next/router'
 import { Fragment, useEffect, useState } from 'react'
+import { nearAddresses } from "@/utils/NearWalletUtil";
 
 /**
  * Component
@@ -52,24 +53,39 @@ export default function SessionPage() {
     await signClient.emit({
       topic,
       event: { name: 'chainChanged', data: 'Hello World' },
-      chainId: 'eip155:1'
+      chainId: 'neart:testnet'
     })
     setLoading(false)
   }
 
-  const newNs = {
-    eip155: {
-      accounts: [
-        'eip155:1:0x70012948c348CBF00806A3C79E3c5DAdFaAa347B',
-        'eip155:137:0x70012948c348CBF00806A3C79E3c5DAdFaAa347B'
-      ],
-      methods: ['personal_sign', 'eth_signTypedData', 'eth_sendTransaction'],
-      events: []
+  async function onSessionAddUpdate() {
+    setLoading(true)
+
+    const newNs = {
+      ...session!.namespaces,
+      "near": {
+        ...session!.namespaces.near,
+        accounts: nearAddresses.map((a) => `near:testnet:${a}`),
+      },
     }
+
+    const { acknowledged } = await signClient.update({ topic, namespaces: newNs })
+    await acknowledged()
+    setUpdated(new Date())
+    setLoading(false)
   }
 
-  async function onSessionUpdate() {
+  async function onSessionRemoveUpdate() {
     setLoading(true)
+
+    const newNs = {
+      ...session!.namespaces,
+      "near": {
+        ...session!.namespaces.near,
+        accounts: nearAddresses.slice(0, 1).map((a) => `near:testnet:${a}`),
+      },
+    }
+
     const { acknowledged } = await signClient.update({ topic, namespaces: newNs })
     await acknowledged()
     setUpdated(new Date())
@@ -155,8 +171,14 @@ export default function SessionPage() {
       </Row>
 
       <Row css={{ marginTop: '$10' }}>
-        <Button flat css={{ width: '100%' }} color="warning" onClick={onSessionUpdate}>
-          {loading ? <Loading size="sm" color="warning" /> : 'Update'}
+        <Button flat css={{ width: '100%' }} color="warning" onClick={onSessionAddUpdate}>
+          {loading ? <Loading size="sm" color="warning" /> : 'Update (Add)'}
+        </Button>
+      </Row>
+
+      <Row css={{ marginTop: '$10' }}>
+        <Button flat css={{ width: '100%' }} color="warning" onClick={onSessionRemoveUpdate}>
+          {loading ? <Loading size="sm" color="warning" /> : 'Update (Remove)'}
         </Button>
       </Row>
     </Fragment>
