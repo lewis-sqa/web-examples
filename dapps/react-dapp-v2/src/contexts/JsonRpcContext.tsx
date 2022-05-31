@@ -547,68 +547,72 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   // -------- NEAR RPC METHODS --------
 
   const nearRpc = {
-    testSignTransaction: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
-      const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_TRANSACTION
-      const result = await client!.request({
-        topic: session!.topic,
-        chainId,
-        request: {
-          method,
-          params: {
-            signerId: address,
-            receiverId: "guest-book.testnet",
-            actions: [{
-              type: "FunctionCall",
-              params: {
-                methodName: "addMessage",
-                args: { text: "Hello from Wallet Connect!" },
-                gas: "30000000000000",
-                deposit: "0",
-              }
-            }]
-          },
-        },
-      });
-
-      return {
-        method,
-        address,
-        valid: true,
-        result,
-      };
-    }),
-    testSignTransactions: _createJsonRpcRequestHandler(async (chainId: string, address: string) => {
-      const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_TRANSACTIONS
-      const result = await client!.request({
-        topic: session!.topic,
-        chainId,
-        request: {
-          method,
-          params: {
-            transactions: [{
+    testSignTransaction: _createJsonRpcRequestHandler(
+      async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
+        const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_TRANSACTION
+        const result = await client!.request({
+          topic: session!.topic,
+          chainId,
+          request: {
+            method,
+            params: {
               signerId: address,
               receiverId: "guest-book.testnet",
               actions: [{
                 type: "FunctionCall",
                 params: {
                   methodName: "addMessage",
-                  args: {text: "Hello from Wallet Connect!"},
+                  args: { text: "Hello from Wallet Connect!" },
                   gas: "30000000000000",
                   deposit: "0",
                 }
               }]
-            }],
-          }
-        },
-      });
+            },
+          },
+        });
 
-      return {
-        method,
-        address,
-        valid: true,
-        result,
-      };
-    }),
+        return {
+          method,
+          address,
+          valid: true,
+          result: JSON.stringify(result),
+        };
+      }
+    ),
+    testSignTransactions: _createJsonRpcRequestHandler(
+      async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
+        const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_TRANSACTIONS
+        const result = await client!.request({
+          topic: session!.topic,
+          chainId,
+          request: {
+            method,
+            params: {
+              transactions: [{
+                signerId: address,
+                receiverId: "guest-book.testnet",
+                actions: [{
+                  type: "FunctionCall",
+                  params: {
+                    methodName: "addMessage",
+                    args: {text: "Hello from Wallet Connect!"},
+                    gas: "30000000000000",
+                    deposit: "0",
+                  }
+                }]
+              }],
+            }
+          },
+        });
+
+        return {
+          method,
+          address,
+          valid: true,
+          result: JSON.stringify(result),
+        };
+      }
+    ),
   };
 
   return (

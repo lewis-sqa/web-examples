@@ -1,7 +1,7 @@
 import { COSMOS_MAINNET_CHAINS, TCosmosChain } from '@/data/COSMOSData'
 import { EIP155_CHAINS, TEIP155Chain } from '@/data/EIP155Data'
 import { SOLANA_CHAINS, TSolanaChain } from '@/data/SolanaData'
-import { NEAR_CHAINS, TNearChain } from '@/data/NearData'
+import { NEAR_CHAINS, TNearChain } from '@/data/NEARData'
 import { utils } from 'ethers'
 
 /**

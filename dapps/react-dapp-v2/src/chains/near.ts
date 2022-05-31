@@ -10,7 +10,8 @@ export const NearMetadata: NamespaceMetadata = {
   }
 };
 
-export const NearChains: ChainsMap = {
+// TODO: add `solana` namespace to `caip-api` package to avoid manual specification here.
+export const NearChainData: ChainsMap = {
   "testnet": {
     "name": "NEAR Testnet",
     "id": "near:testnet",
