@@ -11,17 +11,18 @@ import { SignedTransaction } from "near-api-js/lib/transaction";
 import BN from "bn.js";
 
 import { NEAR_CHAINS, TNearChain } from "@/data/NEARData";
+import { signClient } from '@/utils/WalletConnectUtil'
 
 interface SignInParams {
   chainId: string;
+  topic: string;
   contractId: string;
   methodNames: Array<string>;
-  accounts: Array<{ accountId: string; publicKey: string; }>;
 }
 
 interface SignOutParams {
   chainId: string;
-  accounts: Array<{ accountId: string; publicKey: string; }>;
+  topic: string;
 }
 
 interface Transaction {
@@ -50,6 +51,11 @@ interface SignAndSendTransactionsParams {
 interface Account {
   accountId: string;
   publicKey: string;
+}
+
+interface StoredAccount {
+  accountId: string;
+  publicKey: string;
   privateKey: string;
 }
 
@@ -61,7 +67,7 @@ const getJsonItem = <Value extends unknown>(path: string) => {
 
 export class NearWallet {
   private near: Near;
-  private accounts: Array<Account>;
+  private accounts: Array<StoredAccount>;
 
   static async init() {
     const networkId = "testnet";
@@ -74,9 +80,9 @@ export class NearWallet {
       headers: {}
     });
 
-    let accounts: Array<Account> = [];
+    let accounts: Array<StoredAccount> = [];
     for (let i = 1; i <= 2; i += 1) {
-      let account = getJsonItem<Account>(`NEAR_ACCOUNT_${i}`);
+      let account = getJsonItem<StoredAccount>(`NEAR_ACCOUNT_${i}`);
 
       if (!account) {
         account = await NearWallet.createDevAccount();
@@ -126,7 +132,7 @@ export class NearWallet {
       });
   }
 
-  private constructor(near: Near, accounts: Array<Account>) {
+  private constructor(near: Near, accounts: Array<StoredAccount>) {
     this.near = near;
     this.accounts = accounts;
   }
@@ -179,44 +185,88 @@ export class NearWallet {
     return this.accounts;
   }
 
-  async signIn({ chainId, contractId, methodNames, accounts }: SignInParams) {
-    const transactions = accounts.map<Transaction>((x) => ({
-      signerId: x.accountId,
-      receiverId: x.accountId,
-      actions: [{
-        type: "AddKey",
-        params: {
-          publicKey: x.publicKey,
-          accessKey: {
-            permission: {
-              receiverId: contractId,
-              methodNames,
+  async signIn({ chainId, topic, contractId, methodNames }: SignInParams): Promise<Array<Account>> {
+    const session = signClient.session.get(topic);
+    const { accounts } = session.namespaces.near;
+    const result: Array<Account> = [];
+    const keystore = new keyStores.BrowserLocalStorageKeyStore(
+      window.localStorage,
+      `${chainId}:${topic}`
+    );
+
+    for (let i = 0; i < accounts.length; i += 1) {
+      const accountId = accounts[i].split(":")[2];
+      const keyPair = utils.KeyPair.fromRandom("ed25519");
+      const publicKey = keyPair.getPublicKey().toString();
+
+      try {
+        await this.signAndSendTransaction({
+          chainId,
+          signerId: accountId,
+          receiverId: accountId,
+          actions: [{
+            type: "AddKey",
+            params: {
+              publicKey,
+              accessKey: {
+                permission: {
+                  receiverId: contractId,
+                  methodNames,
+                },
+              },
             },
-          },
-        },
-      }],
-    }));
+          }]
+        });
 
-    await this.signAndSendTransactions({ chainId, transactions });
+        await keystore.setKey(chainId.split(":")[1], accountId, keyPair);
 
-    return accounts
+        result.push({accountId, publicKey});
+      } catch (err) {
+        console.log(`Failed to create FunctionCall access key for ${accountId}`);
+        console.error(err);
+      }
+    }
+
+    return result;
   }
 
-  async signOut({ chainId, accounts }: SignOutParams) {
-    const transactions = accounts.map<Transaction>((x) => ({
-      signerId: x.accountId,
-      receiverId: x.accountId,
-      actions: [{
-        type: "DeleteKey",
-        params: {
-          publicKey: x.publicKey,
-        },
-      }],
-    }));
+  async signOut({ chainId, topic }: SignOutParams): Promise<Array<Account>> {
+    const session = signClient.session.get(topic);
+    const { accounts } = session.namespaces.near;
+    const result: Array<Account> = [];
+    const keystore = new keyStores.BrowserLocalStorageKeyStore(
+      window.localStorage,
+      `${chainId}:${topic}`
+    );
 
-    await this.signAndSendTransactions({ chainId, transactions });
+    for (let i = 0; i < accounts.length; i += 1) {
+      const accountId = accounts[i].split(":")[2];
+      const keyPair = await keystore.getKey(chainId.split(":")[1], accountId);
+      const publicKey = keyPair.getPublicKey().toString();
 
-    return accounts
+      try {
+        await this.signAndSendTransaction({
+          chainId,
+          signerId: accountId,
+          receiverId: accountId,
+          actions: [{
+            type: "DeleteKey",
+            params: {
+              publicKey
+            },
+          }]
+        });
+
+        await keystore.removeKey(chainId.split(":")[1], accountId);
+      } catch (err) {
+        console.log(`Failed to remove FunctionCall access key for ${accountId}`);
+        console.error(err);
+
+        result.push({ accountId, publicKey });
+      }
+    }
+
+    return result;
   }
 
   async signTransactions({ chainId, transactions }: SignTransactionsParams) {

@@ -7,7 +7,7 @@ import { nearWallet } from '@/utils/NearWalletUtil'
 export async function approveNearRequest(
   requestEvent: SignClientTypes.EventArguments['session_request']
 ) {
-  const { params, id } = requestEvent
+  const { params, id, topic } = requestEvent
   const { chainId, request } = params
 
   switch (request.method) {
@@ -55,9 +55,9 @@ export async function approveNearRequest(
 
       const accounts = await nearWallet.signIn({
         chainId,
+        topic,
         contractId: request.params.contractId,
         methodNames: request.params.methodNames || [],
-        accounts: request.params.accounts
       });
 
       return formatJsonRpcResult(id, accounts);
@@ -69,10 +69,7 @@ export async function approveNearRequest(
         throw new Error("Invalid chain id");
       }
 
-      const accounts = await nearWallet.signOut({
-        chainId,
-        accounts: request.params.accounts
-      });
+     const accounts = await nearWallet.signOut({ chainId, topic });
 
       return formatJsonRpcResult(id, accounts);
     }
