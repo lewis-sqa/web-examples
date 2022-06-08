@@ -7,7 +7,6 @@ import { cosmosAddresses } from '@/utils/CosmosWalletUtil'
 import { eip155Addresses } from '@/utils/EIP155WalletUtil'
 import { isCosmosChain, isEIP155Chain, isSolanaChain, isNearChain } from '@/utils/HelperUtil'
 import { solanaAddresses } from '@/utils/SolanaWalletUtil'
-import { nearAddresses } from '@/utils/NearWalletUtil'
 import { signClient } from '@/utils/WalletConnectUtil'
 import { Button, Divider, Modal, Text } from '@nextui-org/react'
 import { SessionTypes } from '@walletconnect/types'
@@ -16,7 +15,6 @@ import { Fragment, useState } from 'react'
 
 export default function SessionProposalModal() {
   const [selectedAccounts, setSelectedAccounts] = useState<Record<string, string[]>>({})
-  const hasSelected = Object.keys(selectedAccounts).length
 
   // Get proposal data and wallet address from store
   const proposal = ModalStore.state.data?.proposal
@@ -29,6 +27,14 @@ export default function SessionProposalModal() {
   // Get required proposal data
   const { id, params } = proposal
   const { proposer, requiredNamespaces, relays } = params
+
+  const hasSelected = Object.keys(requiredNamespaces).every((key) => {
+    if (isNearChain(key)) {
+      return true
+    }
+
+    return selectedAccounts[key].length
+  })
 
   // Add / remove address from EIP155 selection
   function onSelectAccount(chain: string, account: string) {
@@ -53,8 +59,10 @@ export default function SessionProposalModal() {
       const namespaces: SessionTypes.Namespaces = {}
       Object.keys(requiredNamespaces).forEach(key => {
         const accounts: string[] = []
-        requiredNamespaces[key].chains.map(chain => {
-          selectedAccounts[key].map(acc => accounts.push(`${chain}:${acc}`))
+        requiredNamespaces[key].chains.forEach(chain => {
+          selectedAccounts[key]?.forEach(acc => {
+            accounts.push(`${chain}:${acc}`)
+          })
         })
         namespaces[key] = {
           accounts,
@@ -114,14 +122,7 @@ export default function SessionProposalModal() {
         />
       )
     } else if (isNearChain(chain)) {
-      return (
-        <ProposalSelectSection
-          addresses={nearAddresses}
-          selectedAddresses={selectedAccounts[chain]}
-          onSelect={onSelectAccount}
-          chain={chain}
-        />
-      )
+      return null;
     }
   }
 
