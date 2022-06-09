@@ -31,8 +31,6 @@ export const NEAR_CHAINS = { ...NEAR_MAINNET_CHAINS, ...NEAR_TEST_CHAINS }
  * Methods
  */
 export const NEAR_SIGNING_METHODS = {
-  NEAR_SIGN_TRANSACTION: 'near_signTransaction',
-  NEAR_SIGN_TRANSACTIONS: 'near_signTransactions',
   NEAR_SIGN_IN: 'near_signIn',
   NEAR_SIGN_OUT: 'near_signOut',
   NEAR_SIGN_AND_SEND_TRANSACTION: 'near_signAndSendTransaction',

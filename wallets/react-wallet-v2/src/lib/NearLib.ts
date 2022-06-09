@@ -31,6 +31,12 @@ interface Transaction {
   actions: Array<any>;
 }
 
+interface IsSilentlySignableParams {
+  chainId: string;
+  topic: string;
+  transactions: Array<Transaction>;
+}
+
 interface SignTransactionsParams {
   chainId: string;
   transactions: Array<Transaction>;
@@ -135,6 +141,78 @@ export class NearWallet {
   private constructor(near: Near, accounts: Array<StoredAccount>) {
     this.near = near;
     this.accounts = accounts;
+  }
+
+  async isSilentlySignable({ chainId, topic, transactions }: IsSilentlySignableParams): Promise<boolean> {
+    const session = signClient.session.get(topic);
+    const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
+    const keystore = new keyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}`);
+    const accessKeys: Record<string, AccessKeyView> = {};
+    const accounts: Array<Account> = [];
+
+    for (let i = 0; i < session.namespaces.near.accounts.length; i += 1) {
+      const accountId = session.namespaces.near.accounts[i].split(":")[2];
+      const keyPair = await keystore.getKey(chainId.split(":")[1], accountId);
+      const publicKey = keyPair.getPublicKey().toString();
+      const cacheKey = `${accountId}:${publicKey}`;
+
+      if (!accessKeys[cacheKey]) {
+        accessKeys[cacheKey] = await provider.query<AccessKeyView>({
+          request_type: "view_access_key",
+          finality: "final",
+          account_id: accountId,
+          public_key: publicKey,
+        });
+      }
+
+      accounts.push({
+        accountId,
+        publicKey
+      });
+    }
+
+    console.log("isSilentlySignable");
+    console.log("Transactions:", transactions);
+    console.log("Accounts we have access to:", accounts);
+
+    return transactions.every((transaction) => {
+      console.log("Checking...", transaction);
+
+      // Check the signerId is valid based on the accounts we have access to.
+      if (!accounts.find((x) => x.accountId === transaction.signerId)) {
+        return false;
+      }
+
+      return accounts.some(({ accountId, publicKey}) => {
+        const accessKey = accessKeys[`${accountId}:${publicKey}`];
+
+        console.log(`Access key for ${accountId}`, accessKey);
+
+        if (accessKey.permission === "FullAccess") {
+          throw new Error("Invalid access key");
+        }
+
+        const { receiver_id, method_names } = accessKey.permission.FunctionCall;
+
+        if (transaction.receiverId !== receiver_id) {
+          return false;
+        }
+
+        return transaction.actions.every((action) => {
+          if (action.type !== "FunctionCall") {
+            return false;
+          }
+
+          const { methodName, deposit } = action.params;
+
+          if (method_names.length && method_names.includes(methodName)) {
+            return false;
+          }
+
+          return parseFloat(deposit) <= 0;
+        });
+      });
+    });
   }
 
   getAccessKey(permission: any) {
