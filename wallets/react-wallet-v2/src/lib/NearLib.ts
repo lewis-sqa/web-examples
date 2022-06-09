@@ -31,6 +31,17 @@ interface Transaction {
   actions: Array<any>;
 }
 
+interface IsAccessKeyValidForTransactionParams {
+  accessKey: AccessKeyView;
+  transaction: Transaction;
+}
+
+interface GetAccessKeyForTransactionParams {
+  chainId: string;
+  topic: string;
+  transaction: Transaction;
+}
+
 interface IsSilentlySignableParams {
   chainId: string;
   topic: string;
@@ -143,75 +154,72 @@ export class NearWallet {
     this.accounts = accounts;
   }
 
-  async isSilentlySignable({ chainId, topic, transactions }: IsSilentlySignableParams): Promise<boolean> {
-    const session = signClient.session.get(topic);
-    const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
-    const keystore = new keyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}`);
-    const accessKeys: Record<string, AccessKeyView> = {};
-    const accounts: Array<Account> = [];
-
-    for (let i = 0; i < session.namespaces.near.accounts.length; i += 1) {
-      const accountId = session.namespaces.near.accounts[i].split(":")[2];
-      const keyPair = await keystore.getKey(chainId.split(":")[1], accountId);
-      const publicKey = keyPair.getPublicKey().toString();
-      const cacheKey = `${accountId}:${publicKey}`;
-
-      if (!accessKeys[cacheKey]) {
-        accessKeys[cacheKey] = await provider.query<AccessKeyView>({
-          request_type: "view_access_key",
-          finality: "final",
-          account_id: accountId,
-          public_key: publicKey,
-        });
-      }
-
-      accounts.push({
-        accountId,
-        publicKey
-      });
+  isAccessKeyValidForTransaction({ accessKey, transaction }: IsAccessKeyValidForTransactionParams): boolean {
+    if (accessKey.permission === "FullAccess") {
+      return true;
     }
 
-    console.log("isSilentlySignable");
-    console.log("Transactions:", transactions);
-    console.log("Accounts we have access to:", accounts);
+    const { receiver_id, method_names } = accessKey.permission.FunctionCall;
 
-    return transactions.every((transaction) => {
-      console.log("Checking...", transaction);
+    if (transaction.receiverId !== receiver_id) {
+      return false;
+    }
 
-      // Check the signerId is valid based on the accounts we have access to.
-      if (!accounts.find((x) => x.accountId === transaction.signerId)) {
+    return transaction.actions.every((action) => {
+      if (action.type !== "FunctionCall") {
         return false;
       }
 
-      return accounts.some(({ accountId, publicKey}) => {
-        const accessKey = accessKeys[`${accountId}:${publicKey}`];
+      const { methodName, deposit } = action.params;
 
-        console.log(`Access key for ${accountId}`, accessKey);
+      if (method_names.length && method_names.includes(methodName)) {
+        return false;
+      }
 
-        if (accessKey.permission === "FullAccess") {
-          throw new Error("Invalid access key");
-        }
+      return parseFloat(deposit) <= 0;
+    });
+  }
 
-        const { receiver_id, method_names } = accessKey.permission.FunctionCall;
+  async getAccessKeyForTransaction({ chainId, topic, transaction }: GetAccessKeyForTransactionParams): Promise<AccessKeyView | null> {
+    const session = signClient.session.get(topic);
+    const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
+    const keystore = new keyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}`);
+    const accountIds = session.namespaces.near.accounts.map((x) => {
+      return x.split(":")[2];
+    })
 
-        if (transaction.receiverId !== receiver_id) {
-          return false;
-        }
+    // Check the signerId is valid based on the accounts we have access to.
+    if (!accountIds.includes(transaction.signerId)) {
+      return null;
+    }
 
-        return transaction.actions.every((action) => {
-          if (action.type !== "FunctionCall") {
-            return false;
-          }
+    const keyPair = await keystore.getKey(chainId.split(":")[1], transaction.signerId);
 
-          const { methodName, deposit } = action.params;
-
-          if (method_names.length && method_names.includes(methodName)) {
-            return false;
-          }
-
-          return parseFloat(deposit) <= 0;
-        });
+    if (keyPair) {
+      const publicKey = keyPair.getPublicKey().toString();
+      const accessKey = await provider.query<AccessKeyView>({
+        request_type: "view_access_key",
+        finality: "final",
+        account_id: transaction.signerId,
+        public_key: publicKey,
       });
+
+      if (this.isAccessKeyValidForTransaction({ accessKey, transaction })) {
+        return accessKey
+      }
+    }
+
+    const account = this.accounts.find((x) => x.accountId === transaction.signerId);
+
+    if (!account) {
+      return null;
+    }
+
+    return provider.query<AccessKeyView>({
+      request_type: "view_access_key",
+      finality: "final",
+      account_id: transaction.signerId,
+      public_key: account.publicKey,
     });
   }
 

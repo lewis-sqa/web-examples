@@ -6,6 +6,7 @@ import { nearWallet } from '@/utils/NearWalletUtil'
 import ModalStore from '@/store/ModalStore'
 import { signClient } from '@/utils/WalletConnectUtil'
 import { SignClientTypes } from '@walletconnect/types'
+import { ERROR } from '@walletconnect/utils'
 import { useCallback, useEffect } from 'react'
 import { formatJsonRpcResult } from "@json-rpc-tools/utils";
 
@@ -57,36 +58,41 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
           return ModalStore.open('SessionSignNearModal', { requestEvent, requestSession })
 
         case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
-          const silentlySignable = await nearWallet.isSilentlySignable({
+          const accessKey = await nearWallet.getAccessKeyForTransaction({
             chainId,
             topic,
-            transactions: [{
+            transaction: {
               signerId: request.params.signerId,
               receiverId: request.params.receiverId,
               actions: request.params.actions
-            }]
+            }
           });
 
-          if (silentlySignable) {
-            console.log("Signing silently!");
+          if (!accessKey) {
+            return signClient.reject({
+              id,
+              reason: ERROR.MISSING_OR_INVALID.format({ name: "signerId" })
+            });
+          }
 
-            return signClient.respond({
-              topic,
-              response: formatJsonRpcResult(
-                id,
-                await nearWallet.signAndSendTransaction({
-                  chainId,
-                  signerId: request.params.signerId,
-                  receiverId: request.params.receiverId,
-                  actions: request.params.actions
-                })
-              )
+          if (accessKey.permission === "FullAccess") {
+            return ModalStore.open('SessionSignNearModal', {
+              requestEvent,
+              requestSession
             })
           }
 
-          return ModalStore.open('SessionSignNearModal', {
-            requestEvent,
-            requestSession
+          return signClient.respond({
+            topic,
+            response: formatJsonRpcResult(
+              id,
+              await nearWallet.signAndSendTransaction({
+                chainId,
+                signerId: request.params.signerId,
+                receiverId: request.params.receiverId,
+                actions: request.params.actions
+              })
+            )
           })
         }
         case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS:
