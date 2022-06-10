@@ -58,7 +58,7 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
           return ModalStore.open('SessionSignNearModal', { requestEvent, requestSession })
 
         case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
-          const keys = await nearWallet.getKeysForTransaction({
+          const access = await nearWallet.getAccessForTransaction({
             chainId,
             topic,
             transaction: {
@@ -68,14 +68,14 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
             }
           });
 
-          if (!keys) {
+          if (!access) {
             return signClient.reject({
               id,
-              reason: ERROR.MISSING_OR_INVALID.format({ name: "signerId" })
+              reason: ERROR.MISSING_OR_INVALID.format({ name: "transaction" })
             });
           }
 
-          if (keys.accessKey.permission === "FullAccess") {
+          if (access.accessKey.permission === "FullAccess") {
             return ModalStore.open('SessionSignNearModal', {
               requestEvent,
               requestSession
@@ -89,16 +89,52 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
               await nearWallet.signAndSendTransaction({
                 chainId,
                 topic,
-                signerId: request.params.signerId,
-                receiverId: request.params.receiverId,
-                actions: request.params.actions
+                transaction: {
+                  signerId: request.params.signerId,
+                  receiverId: request.params.receiverId,
+                  actions: request.params.actions
+                }
               })
             )
           })
         }
-        case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS:
-          // TODO: Determine whether we need to display the prompt or sign silently.
-          return ModalStore.open('SessionSignNearModal', { requestEvent, requestSession })
+        case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS: {
+          const accesses = await Promise.all(
+            request.params.transactions.map((transaction: any) => {
+              return nearWallet.getAccessForTransaction({
+                chainId,
+                topic,
+                transaction
+              })
+            })
+          );
+
+          if (accesses.some((access) => !access)) {
+            return signClient.reject({
+              id,
+              reason: ERROR.MISSING_OR_INVALID.format({ name: "transaction" })
+            });
+          }
+
+          if (accesses.some((access) => access.accessKey.permission === "FullAccess")) {
+            return ModalStore.open('SessionSignNearModal', {
+              requestEvent,
+              requestSession
+            });
+          }
+
+          return signClient.respond({
+            topic,
+            response: formatJsonRpcResult(
+              id,
+              await nearWallet.signAndSendTransactions({
+                chainId,
+                topic,
+                transactions: request.params.transactions
+              })
+            )
+          });
+        }
       default:
         return ModalStore.open('SessionUnsuportedMethodModal', { requestEvent, requestSession })
     }

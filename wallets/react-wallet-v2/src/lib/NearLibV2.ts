@@ -1,10 +1,10 @@
 import {
   InMemorySigner,
-  keyStores,
   providers,
   Signer,
+  keyStores as nearKeyStores,
   transactions as nearTransactions,
-  utils
+  utils, transactions
 } from "near-api-js";
 import { AccessKeyView } from "near-api-js/lib/providers/provider";
 import BN from "bn.js";
@@ -48,18 +48,30 @@ interface SignInParams {
   methodNames: Array<string>;
 }
 
+interface SignTransactionsParams {
+  chainId: string;
+  topic: string;
+  transactions: Array<Transaction>;
+}
+
 interface SignAndSendTransactionParams {
   chainId: string;
   topic: string;
   transaction: Transaction;
 }
 
+interface SignAndSendTransactionsParams {
+  chainId: string;
+  topic: string;
+  transactions: Array<Transaction>;
+}
+
 export class NearWallet {
   private networkId: string;
-  private vault: keyStores.KeyStore;
+  private vault: nearKeyStores.KeyStore;
 
   static async init(networkId: string) {
-    const vault = new keyStores.BrowserLocalStorageKeyStore(
+    const vault = new nearKeyStores.BrowserLocalStorageKeyStore(
       window.localStorage,
       "vault"
     );
@@ -101,7 +113,7 @@ export class NearWallet {
       });
   }
 
-  private constructor(networkId: string, vault: keyStores.KeyStore) {
+  private constructor(networkId: string, vault: nearKeyStores.KeyStore) {
     this.networkId = networkId;
     this.vault = vault;
   }
@@ -196,7 +208,7 @@ export class NearWallet {
     const session = signClient.session.get(topic);
     const { accounts } = session.namespaces.near;
     const result: Array<Account> = [];
-    const keystore = new keyStores.BrowserLocalStorageKeyStore(
+    const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(
       window.localStorage,
       `${chainId}:${topic}`
     );
@@ -228,7 +240,7 @@ export class NearWallet {
           }
         });
 
-        await keystore.setKey(chainId.split(":")[1], accountId, keyPair);
+        await keyStore.setKey(chainId.split(":")[1], accountId, keyPair);
 
         result.push({accountId, publicKey});
       } catch (err) {
@@ -247,7 +259,7 @@ export class NearWallet {
   }: GetAccessForTransactionParams): Promise<TransactionAccess | null> {
     const session = signClient.session.get(topic);
     const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
-    const keystore = new keyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}`);
+    const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}`);
     const accountIds = session.namespaces.near.accounts.map((x) => x.split(":")[2]);
     const networkId = chainId.split(":")[1];
 
@@ -256,15 +268,12 @@ export class NearWallet {
       return null;
     }
 
-    const keyPairs: Array<utils.KeyPair> = [
-      // Ensure FunctionCall key pair is first.
-      await keystore.getKey(networkId, transaction.signerId),
-      // Fallback to FullAccess key pair.
-      await this.vault.getKey(networkId, transaction.signerId),
-    ];
+    // Use FunctionCall key store before falling back to FullAccess.
+    const keyStores: Array<nearKeyStores.KeyStore> = [keyStore, this.vault];
 
-    for (let i = 0 ; i < keyPairs.length; i += 1) {
-      const keyPair = keyPairs[i];
+    for (let i = 0 ; i < keyStores.length; i += 1) {
+      const keyStore = keyStores[i];
+      const keyPair = await keyStore.getKey(networkId, transaction.signerId);
 
       // Note: type for KeyStore.getKey is actually nullable.
       if (!keyPair) {
@@ -282,7 +291,7 @@ export class NearWallet {
       if (this.validateAccessKey({ accessKey, transaction })) {
         return {
           accessKey,
-          signer: new InMemorySigner(keystore),
+          signer: new InMemorySigner(keyStore),
         };
       }
     }
@@ -290,43 +299,78 @@ export class NearWallet {
     return null;
   }
 
+  async signTransactions({
+    chainId,
+    topic,
+    transactions
+  }: SignTransactionsParams): Promise<Array<nearTransactions.SignedTransaction>> {
+    const signedTxs: Array<nearTransactions.SignedTransaction> = [];
+
+    for (let i = 0; i < transactions.length; i += 1) {
+      const transaction = transactions[i];
+      const access = await this.getAccessForTransaction({ chainId, topic, transaction });
+
+      if (!access) {
+        throw new Error("Failed to find matching access key for transaction");
+      }
+
+      const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
+      const networkId = chainId.split(":")[1];
+      const { accessKey, signer } = access;
+
+      const permission = accessKey.permission === "FullAccess" ? "FullAccess" : "FunctionCall";
+      console.log("Found valid access key", { transaction, permission, accessKey });
+
+      const block = await provider.block({ finality: "final" });
+      const publicKey = await signer.getPublicKey(transaction.signerId, networkId);
+
+      const tx = nearTransactions.createTransaction(
+        transaction.signerId,
+        publicKey,
+        transaction.receiverId,
+        accessKey.nonce + 1,
+        this.transformActions(transaction.actions),
+        utils.serialize.base_decode(block.header.hash)
+      );
+
+      const [, signedTx] = await nearTransactions.signTransaction(
+        tx,
+        signer,
+        transaction.signerId,
+        networkId
+      );
+
+      signedTxs.push(signedTx);
+    }
+
+    return signedTxs;
+  }
+
   async signAndSendTransaction({
     chainId,
     topic,
     transaction
   }: SignAndSendTransactionParams): Promise<providers.FinalExecutionOutcome> {
-    const access = await this.getAccessForTransaction({ chainId, topic, transaction });
-
-    if (!access) {
-      throw new Error("Failed to find matching access key for transaction");
-    }
-
     const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
-    const networkId = chainId.split(":")[1];
-    const { accessKey, signer } = access;
-
-    const permission = accessKey.permission === "FullAccess" ? "FullAccess" : "FunctionCall";
-    console.log("Found valid access key", { transaction, permission, accessKey });
-
-    const block = await provider.block({ finality: "final" });
-    const publicKey = await signer.getPublicKey(transaction.signerId, networkId);
-
-    const tx = nearTransactions.createTransaction(
-      transaction.signerId,
-      publicKey,
-      transaction.receiverId,
-      accessKey.nonce + 1,
-      this.transformActions(transaction.actions),
-      utils.serialize.base_decode(block.header.hash)
-    );
-
-    const [, signedTx] = await nearTransactions.signTransaction(
-      tx,
-      signer,
-      transaction.signerId,
-      networkId
-    );
+    const [signedTx] = await this.signTransactions({
+      chainId,
+      topic,
+      transactions: [transaction]
+    });
 
     return provider.sendTransaction(signedTx);
+  }
+
+  async signAndSendTransactions({
+    chainId,
+    topic,
+    transactions
+  }: SignAndSendTransactionsParams): Promise<Array<providers.FinalExecutionOutcome>> {
+    const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
+    const signedTxs = await this.signTransactions({ chainId, topic, transactions });
+
+    return Promise.all(
+      signedTxs.map((signedTx) => provider.sendTransaction(signedTx))
+    );
   }
 }

@@ -57,21 +57,21 @@ export async function approveNearRequest(
 
       return formatJsonRpcResult(id, res);
     }
-    // case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS: {
-    //   console.log("approve", { id, params });
-    //
-    //   if (!chainId) {
-    //     throw new Error("Invalid chain id");
-    //   }
-    //
-    //   const res = await nearWallet.signAndSendTransactions({
-    //     chainId,
-    //     topic,
-    //     transactions: request.params.transactions,
-    //   });
-    //
-    //   return formatJsonRpcResult(id, res);
-    // }
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS: {
+      console.log("approve", { id, params });
+
+      if (!chainId) {
+        throw new Error("Invalid chain id");
+      }
+
+      const res = await nearWallet.signAndSendTransactions({
+        chainId,
+        topic,
+        transactions: request.params.transactions,
+      });
+
+      return formatJsonRpcResult(id, res);
+    }
     default:
       throw new Error(ERROR.UNKNOWN_JSONRPC_METHOD.format().message)
   }
