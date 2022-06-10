@@ -78,7 +78,7 @@ export class NearWallet {
   static async init(networkId: string) {
     const vault = new nearKeyStores.BrowserLocalStorageKeyStore(
       window.localStorage,
-      "vault"
+      "vault:"
     );
 
     const accounts = await vault.getAccounts(networkId);
@@ -215,7 +215,7 @@ export class NearWallet {
     const result: Array<Account> = [];
     const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(
       window.localStorage,
-      `${chainId}:${topic}`
+      `${chainId}:${topic}:`
     );
 
     for (let i = 0; i < accounts.length; i += 1) {
@@ -263,7 +263,7 @@ export class NearWallet {
     const result: Array<Account> = [];
     const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(
       window.localStorage,
-      `${chainId}:${topic}`
+      `${chainId}:${topic}:`
     );
 
     for (let i = 0; i < accounts.length; i += 1) {
@@ -306,7 +306,7 @@ export class NearWallet {
   }: GetAccessForTransactionParams): Promise<TransactionAccess | null> {
     const session = signClient.session.get(topic);
     const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
-    const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}`);
+    const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}:`);
     const accountIds = session.namespaces.near.accounts.map((x) => x.split(":")[2]);
     const networkId = chainId.split(":")[1];
 
