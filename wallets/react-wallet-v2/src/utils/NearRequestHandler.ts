@@ -27,17 +27,17 @@ export async function approveNearRequest(
 
       return formatJsonRpcResult(id, accounts);
     }
-    // case NEAR_SIGNING_METHODS.NEAR_SIGN_OUT: {
-    //   console.log("approve", { id, params });
-    //
-    //   if (!chainId) {
-    //     throw new Error("Invalid chain id");
-    //   }
-    //
-    //  const accounts = await nearWallet.signOut({ chainId, topic });
-    //
-    //   return formatJsonRpcResult(id, accounts);
-    // }
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_OUT: {
+      console.log("approve", { id, params });
+
+      if (!chainId) {
+        throw new Error("Invalid chain id");
+      }
+
+     const accounts = await nearWallet.signOut({ chainId, topic });
+
+      return formatJsonRpcResult(id, accounts);
+    }
     case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
       console.log("approve", { id, params });
 

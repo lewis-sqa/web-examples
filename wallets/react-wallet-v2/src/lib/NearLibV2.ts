@@ -4,7 +4,7 @@ import {
   Signer,
   keyStores as nearKeyStores,
   transactions as nearTransactions,
-  utils, transactions
+  utils,
 } from "near-api-js";
 import { AccessKeyView } from "near-api-js/lib/providers/provider";
 import BN from "bn.js";
@@ -46,6 +46,11 @@ interface SignInParams {
   topic: string;
   contractId: string;
   methodNames: Array<string>;
+}
+
+interface SignOutParams {
+  chainId: string;
+  topic: string;
 }
 
 interface SignTransactionsParams {
@@ -246,6 +251,48 @@ export class NearWallet {
       } catch (err) {
         console.log(`Failed to create FunctionCall access key for ${accountId}`);
         console.error(err);
+      }
+    }
+
+    return result;
+  }
+
+  async signOut({ chainId, topic }: SignOutParams): Promise<Array<Account>> {
+    const session = signClient.session.get(topic);
+    const { accounts } = session.namespaces.near;
+    const result: Array<Account> = [];
+    const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(
+      window.localStorage,
+      `${chainId}:${topic}`
+    );
+
+    for (let i = 0; i < accounts.length; i += 1) {
+      const accountId = accounts[i].split(":")[2];
+      const keyPair = await keyStore.getKey(chainId.split(":")[1], accountId);
+      const publicKey = keyPair.getPublicKey().toString();
+
+      try {
+        await this.signAndSendTransaction({
+          chainId,
+          topic,
+          transaction: {
+            signerId: accountId,
+            receiverId: accountId,
+            actions: [{
+              type: "DeleteKey",
+              params: {
+                publicKey
+              },
+            }]
+          }
+        });
+      } catch (err) {
+        console.log(`Failed to remove FunctionCall access key for ${accountId}`);
+        console.error(err);
+
+        result.push({ accountId, publicKey });
+      } finally {
+        await keyStore.removeKey(chainId.split(":")[1], accountId);
       }
     }
 
