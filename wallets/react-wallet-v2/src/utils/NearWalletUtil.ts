@@ -1,4 +1,4 @@
-import { NearWallet } from "@/lib/NearLib";
+import { NearWallet } from "@/lib/NearLibV2";
 
 export let nearAddresses: string[];
 export let nearWallet: NearWallet;
@@ -8,7 +8,7 @@ export let nearWallet: NearWallet;
  */
 export async function createOrRestoreNearWallet() {
   const wallet = await NearWallet.init();
-  const accounts = wallet.getAccounts();
+  const accounts = await wallet.getAccounts();
 
   nearAddresses = accounts.map((x) => x.accountId);
   nearWallet = wallet;
