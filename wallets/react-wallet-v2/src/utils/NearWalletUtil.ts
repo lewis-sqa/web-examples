@@ -7,7 +7,8 @@ export let nearWallet: NearWallet;
  * Utilities
  */
 export async function createOrRestoreNearWallet() {
-  const wallet = await NearWallet.init();
+  // NEAR only supports dev accounts in testnet.
+  const wallet = await NearWallet.init("testnet");
   const accounts = await wallet.getAccounts();
 
   nearAddresses = accounts.map((x) => x.accountId);
