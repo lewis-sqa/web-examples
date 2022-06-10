@@ -1,5 +1,7 @@
 import { keyStores, utils } from "near-api-js";
 
+const MAX_ACCOUNTS = 2;
+
 interface Account {
   accountId: string;
   publicKey: string;
@@ -26,25 +28,18 @@ export class NearWallet {
       "vault"
     );
 
-    for (let i = 1; i <= 2; i += 1) {
-      let account = getJsonItem<StoredAccount>(`NEAR_ACCOUNT_${i}`);
+    const accounts = await vault.getAccounts(networkId);
 
-      if (!account) {
-        account = await NearWallet.createDevAccount();
-        localStorage.setItem(`NEAR_ACCOUNT_${i}`, JSON.stringify(account));
-      }
+    for (let i = 0; i < Math.max(MAX_ACCOUNTS - accounts.length, 0); i += 1) {
+      const { accountId, keyPair } = await NearWallet.createDevAccount();
 
-      await vault.setKey(
-        networkId,
-        account.accountId,
-        utils.KeyPair.fromString(account.secretKey)
-      );
+      await vault.setKey(networkId, accountId, keyPair);
     }
 
     return new NearWallet(networkId, vault);
   }
 
-  static async createDevAccount(): Promise<StoredAccount> {
+  static async createDevAccount() {
     const keyPair = utils.KeyPair.fromRandom("ed25519");
     const randomNumber = Math.floor(Math.random() * (99999999999999 - 10000000000000) + 10000000000000);
     const accountId = `dev-${Date.now()}-${randomNumber}`;
@@ -52,20 +47,18 @@ export class NearWallet {
 
     return fetch(`https://helper.testnet.near.org/account`, {
       method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         newAccountId: accountId,
-        newAccountPublicKey: publicKey
-      })
+        newAccountPublicKey: publicKey,
+      }),
     })
       .then((res) => {
         if (res.ok) {
           return {
             accountId,
-            secretKey: keyPair.toString(),
-          }
+            keyPair
+          };
         }
 
         throw new Error("Failed to create NEAR dev account");
