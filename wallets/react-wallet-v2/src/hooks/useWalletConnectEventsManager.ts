@@ -58,7 +58,7 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
           return ModalStore.open('SessionSignNearModal', { requestEvent, requestSession })
 
         case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
-          const accessKey = await nearWallet.getAccessKeyForTransaction({
+          const keys = await nearWallet.getKeysForTransaction({
             chainId,
             topic,
             transaction: {
@@ -68,14 +68,14 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
             }
           });
 
-          if (!accessKey) {
+          if (!keys) {
             return signClient.reject({
               id,
               reason: ERROR.MISSING_OR_INVALID.format({ name: "signerId" })
             });
           }
 
-          if (accessKey.permission === "FullAccess") {
+          if (keys.accessKey.permission === "FullAccess") {
             return ModalStore.open('SessionSignNearModal', {
               requestEvent,
               requestSession
@@ -88,6 +88,7 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
               id,
               await nearWallet.signAndSendTransaction({
                 chainId,
+                topic,
                 signerId: request.params.signerId,
                 receiverId: request.params.receiverId,
                 actions: request.params.actions

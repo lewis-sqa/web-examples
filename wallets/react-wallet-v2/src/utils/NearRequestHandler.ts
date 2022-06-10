@@ -47,6 +47,7 @@ export async function approveNearRequest(
 
       const res = await nearWallet.signAndSendTransaction({
         chainId,
+        topic,
         signerId: request.params.signerId,
         receiverId: request.params.receiverId,
         actions: request.params.actions
@@ -63,6 +64,7 @@ export async function approveNearRequest(
 
       const res = await nearWallet.signAndSendTransactions({
         chainId,
+        topic,
         transactions: request.params.transactions,
       });
 
