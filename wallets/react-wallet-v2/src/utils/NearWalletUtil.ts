@@ -1,4 +1,4 @@
-import { NearWallet } from "@/lib/NearLibV2";
+import { NearWallet } from "@/lib/NearLib";
 
 export let nearAddresses: string[];
 export let nearWallet: NearWallet;
