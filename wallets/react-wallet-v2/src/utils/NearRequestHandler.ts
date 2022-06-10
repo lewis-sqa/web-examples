@@ -48,9 +48,11 @@ export async function approveNearRequest(
       const res = await nearWallet.signAndSendTransaction({
         chainId,
         topic,
-        signerId: request.params.signerId,
-        receiverId: request.params.receiverId,
-        actions: request.params.actions
+        transaction: {
+          signerId: request.params.signerId,
+          receiverId: request.params.receiverId,
+          actions: request.params.actions,
+        },
       });
 
       return formatJsonRpcResult(id, res);
