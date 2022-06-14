@@ -419,7 +419,7 @@ export class NearWallet {
         transaction.signerId,
         publicKey,
         transaction.receiverId,
-        accessKey.nonce + 1,
+        accessKey.nonce + i + 1,
         this.transformActions(transaction.actions),
         utils.serialize.base_decode(block.header.hash)
       );
@@ -459,9 +459,14 @@ export class NearWallet {
   }: SignAndSendTransactionsParams): Promise<Array<providers.FinalExecutionOutcome>> {
     const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
     const signedTxs = await this.signTransactions({ chainId, topic, transactions });
+    const results: Array<providers.FinalExecutionOutcome> = [];
 
-    return Promise.all(
-      signedTxs.map((signedTx) => provider.sendTransaction(signedTx))
-    );
+    for (let i = 0; i < signedTxs.length; i += 1) {
+      const signedTx = signedTxs[i];
+
+      results.push(await provider.sendTransaction(signedTx));
+    }
+
+    return results;
   }
 }
