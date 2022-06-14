@@ -30,13 +30,13 @@ interface ValidateAccessKeyParams {
   transaction: Transaction;
 }
 
-interface GetAccessForTransactionParams {
+interface GetTransactionPermissionParams {
   chainId: string;
   topic: string;
   transaction: Transaction;
 }
 
-interface TransactionAccess {
+interface TransactionPermission {
   accessKey: AccessKeyView;
   signer: Signer;
 }
@@ -51,6 +51,12 @@ interface SignInParams {
 interface SignOutParams {
   chainId: string;
   topic: string;
+}
+
+interface IsElevatedPermissionParams {
+  chainId: string;
+  topic: string;
+  transactions: Array<Transaction>;
 }
 
 interface SignTransactionsParams {
@@ -299,20 +305,21 @@ export class NearWallet {
     return result;
   }
 
-  async getAccessForTransaction({
+  async getTransactionPermissions({
     chainId,
     topic,
     transaction
-  }: GetAccessForTransactionParams): Promise<TransactionAccess | null> {
+  }: GetTransactionPermissionParams): Promise<Array<TransactionPermission>> {
     const session = signClient.session.get(topic);
     const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
     const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}:`);
     const accountIds = session.namespaces.near.accounts.map((x) => x.split(":")[2]);
     const networkId = chainId.split(":")[1];
+    const permissions: Array<TransactionPermission> = [];
 
     // Ensure the signerId is valid based on the accounts we have access to.
     if (!accountIds.includes(transaction.signerId)) {
-      return null;
+      return permissions;
     }
 
     // Use FunctionCall key store before falling back to FullAccess.
@@ -336,14 +343,33 @@ export class NearWallet {
       });
 
       if (this.validateAccessKey({ accessKey, transaction })) {
-        return {
+        permissions.push({
           accessKey,
           signer: new InMemorySigner(keyStore),
-        };
+        });
       }
     }
 
-    return null;
+    return permissions;
+  }
+
+  async isElevatedPermission({
+    chainId,
+    topic,
+    transactions
+  }: IsElevatedPermissionParams) {
+    const transactionsWithPermissions = await Promise.all(transactions.map(async (transaction) => ({
+      transaction,
+      permissions: await this.getTransactionPermissions({ chainId, topic, transaction }),
+    })))
+
+    return transactionsWithPermissions.some(({ permissions }) => {
+      if (!permissions.length) {
+        throw new Error("Failed to find matching access key for transaction");
+      }
+
+      return !permissions.some(({ accessKey }) => accessKey.permission !== "FullAccess");
+    });
   }
 
   async signTransactions({
@@ -351,22 +377,37 @@ export class NearWallet {
     topic,
     transactions
   }: SignTransactionsParams): Promise<Array<nearTransactions.SignedTransaction>> {
+    const transactionsWithPermissions = await Promise.all(transactions.map(async (transaction) => ({
+      transaction,
+      permissions: await this.getTransactionPermissions({ chainId, topic, transaction }),
+    })))
+
     const signedTxs: Array<nearTransactions.SignedTransaction> = [];
-
-    for (let i = 0; i < transactions.length; i += 1) {
-      const transaction = transactions[i];
-      const access = await this.getAccessForTransaction({ chainId, topic, transaction });
-
-      if (!access) {
+    const elevated = transactionsWithPermissions.some(({ permissions }) => {
+      if (!permissions.length) {
         throw new Error("Failed to find matching access key for transaction");
       }
 
-      const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
-      const networkId = chainId.split(":")[1];
-      const { accessKey, signer } = access;
+      return !permissions.some(({ accessKey }) => accessKey.permission !== "FullAccess");
+    });
 
-      const permission = accessKey.permission === "FullAccess" ? "FullAccess" : "FunctionCall";
-      console.log("Found valid access key", { transaction, permission, accessKey });
+    for (let i = 0; i < transactionsWithPermissions.length; i += 1) {
+      const { transaction, permissions } = transactionsWithPermissions[i];
+
+      console.log(`Found ${permissions.length} permission${permissions.length === 1 ? "" : "s"}. ${elevated ? "FullAccess keys required" : "FunctionCall keys can be used"}`);
+      console.log({ transaction, permissions });
+
+      const networkId = chainId.split(":")[1];
+      const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
+      const { accessKey, signer } = permissions.find(({ accessKey }) => {
+        if (elevated) {
+          return accessKey.permission === "FullAccess"
+        }
+
+        return true;
+      })!;
+
+      console.log({ accessKey });
 
       const block = await provider.block({ finality: "final" });
       const publicKey = await signer.getPublicKey(transaction.signerId, networkId);
