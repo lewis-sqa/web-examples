@@ -394,8 +394,7 @@ export class NearWallet {
     for (let i = 0; i < transactionsWithPermissions.length; i += 1) {
       const { transaction, permissions } = transactionsWithPermissions[i];
 
-      console.log(`Found ${permissions.length} permission${permissions.length === 1 ? "" : "s"}. ${elevated ? "FullAccess keys required" : "FunctionCall keys can be used"}`);
-      console.log({ transaction, permissions });
+      console.log(`Found ${permissions.length} permission${permissions.length === 1 ? "" : "s"}. ${elevated ? "FullAccess keys required" : "FunctionCall keys can be used"} for transaction`, transaction);
 
       const networkId = chainId.split(":")[1];
       const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
@@ -407,7 +406,7 @@ export class NearWallet {
         return true;
       })!;
 
-      console.log({ accessKey });
+      console.log(`Using access key with ${accessKey.permission === "FullAccess" ? "FullAccess" : "FunctionCall"} permission:`, accessKey);
 
       const block = await provider.block({ finality: "final" });
       const publicKey = await signer.getPublicKey(transaction.signerId, networkId);
