@@ -59,8 +59,8 @@ interface IContext {
     testSignTransaction: TRpcRequestCallback;
   };
   nearRpc: {
-    testSignTransaction: TRpcRequestCallback;
-    testSignTransactions: TRpcRequestCallback;
+    testSignAndSendTransaction: TRpcRequestCallback;
+    testSignAndSendTransactions: TRpcRequestCallback;
   };
   rpcResult?: IFormattedRpcResponse | null;
   isRpcRequestPending: boolean;
@@ -547,26 +547,28 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   // -------- NEAR RPC METHODS --------
 
   const nearRpc = {
-    testSignTransaction: _createJsonRpcRequestHandler(
+    testSignAndSendTransaction: _createJsonRpcRequestHandler(
       async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
-        const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_TRANSACTION
+        const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION
         const result = await client!.request({
           topic: session!.topic,
           chainId,
           request: {
             method,
             params: {
-              signerId: address,
-              receiverId: "guest-book.testnet",
-              actions: [{
-                type: "FunctionCall",
-                params: {
-                  methodName: "addMessage",
-                  args: { text: "Hello from Wallet Connect!" },
-                  gas: "30000000000000",
-                  deposit: "0",
-                }
-              }]
+              transaction: {
+                signerId: address,
+                receiverId: "guest-book.testnet",
+                actions: [{
+                  type: "FunctionCall",
+                  params: {
+                    methodName: "addMessage",
+                    args: { text: "Hello from Wallet Connect!" },
+                    gas: "30000000000000",
+                    deposit: "0",
+                  }
+                }]
+              }
             },
           },
         });
@@ -579,28 +581,43 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
         };
       }
     ),
-    testSignTransactions: _createJsonRpcRequestHandler(
+    testSignAndSendTransactions: _createJsonRpcRequestHandler(
       async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
-        const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_TRANSACTIONS
+        const method = DEFAULT_NEAR_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS
         const result = await client!.request({
           topic: session!.topic,
           chainId,
           request: {
             method,
             params: {
-              transactions: [{
-                signerId: address,
-                receiverId: "guest-book.testnet",
-                actions: [{
-                  type: "FunctionCall",
-                  params: {
-                    methodName: "addMessage",
-                    args: {text: "Hello from Wallet Connect!"},
-                    gas: "30000000000000",
-                    deposit: "0",
-                  }
-                }]
-              }],
+              transactions: [
+                {
+                  signerId: address,
+                  receiverId: "guest-book.testnet",
+                  actions: [{
+                    type: "FunctionCall",
+                    params: {
+                      methodName: "addMessage",
+                      args: { text: "Hello from Wallet Connect! (1/2)" },
+                      gas: "30000000000000",
+                      deposit: "0",
+                    }
+                  }]
+                },
+                {
+                  signerId: address,
+                  receiverId: "guest-book.testnet",
+                  actions: [{
+                    type: "FunctionCall",
+                    params: {
+                      methodName: "addMessage",
+                      args: { text: "Hello from Wallet Connect! (2/2)" },
+                      gas: "30000000000000",
+                      deposit: "0",
+                    }
+                  }]
+                }
+              ],
             }
           },
         });
