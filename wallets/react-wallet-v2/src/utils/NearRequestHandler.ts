@@ -23,6 +23,7 @@ export async function approveNearRequest(
         topic,
         contractId: request.params.contractId,
         methodNames: request.params.methodNames || [],
+        accounts: request.params.accounts,
       });
 
       return formatJsonRpcResult(id, accounts);
@@ -34,7 +35,11 @@ export async function approveNearRequest(
         throw new Error("Invalid chain id");
       }
 
-     const accounts = await nearWallet.signOut({ chainId, topic });
+     const accounts = await nearWallet.signOut({
+       chainId,
+       topic,
+       accounts: request.params.accounts
+     });
 
       return formatJsonRpcResult(id, accounts);
     }
