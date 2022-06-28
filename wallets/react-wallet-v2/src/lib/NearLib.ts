@@ -1,7 +1,6 @@
 import {
   InMemorySigner,
   providers,
-  Signer,
   keyStores as nearKeyStores,
   transactions as nearTransactions,
   utils,
@@ -25,22 +24,6 @@ interface Transaction {
   actions: Array<any>;
 }
 
-interface ValidateAccessKeyParams {
-  accessKey: AccessKeyView;
-  transaction: Transaction;
-}
-
-interface GetTransactionPermissionParams {
-  chainId: string;
-  topic: string;
-  transaction: Transaction;
-}
-
-interface TransactionPermission {
-  accessKey: AccessKeyView;
-  signer: Signer;
-}
-
 interface SignInParams {
   chainId: string;
   topic: string;
@@ -53,12 +36,6 @@ interface SignOutParams {
   chainId: string;
   topic: string;
   accounts: Array<Account>;
-}
-
-interface IsElevatedPermissionParams {
-  chainId: string;
-  topic: string;
-  transactions: Array<Transaction>;
 }
 
 interface SignTransactionsParams {
@@ -204,32 +181,6 @@ export class NearWallet {
     });
   }
 
-  validateAccessKey({ accessKey, transaction }: ValidateAccessKeyParams): boolean {
-    if (accessKey.permission === "FullAccess") {
-      return true;
-    }
-
-    const { receiver_id, method_names } = accessKey.permission.FunctionCall;
-
-    if (transaction.receiverId !== receiver_id) {
-      return false;
-    }
-
-    return transaction.actions.every((action) => {
-      if (action.type !== "FunctionCall") {
-        return false;
-      }
-
-      const { methodName, deposit } = action.params;
-
-      if (method_names.length && method_names.includes(methodName)) {
-        return false;
-      }
-
-      return parseFloat(deposit) <= 0;
-    });
-  }
-
   async signIn({ chainId, topic, contractId, methodNames, accounts }: SignInParams): Promise<Array<Account>> {
     if (!this.isAccountsValid(topic, accounts)) {
       throw new Error("Invalid accounts");
@@ -306,73 +257,6 @@ export class NearWallet {
     }
 
     return result;
-  }
-
-  async getTransactionPermissions({
-    chainId,
-    topic,
-    transaction
-  }: GetTransactionPermissionParams): Promise<Array<TransactionPermission>> {
-    const session = signClient.session.get(topic);
-    const provider = new providers.JsonRpcProvider(NEAR_CHAINS[chainId as TNearChain].rpc);
-    const keyStore = new nearKeyStores.BrowserLocalStorageKeyStore(window.localStorage, `${chainId}:${topic}:`);
-    const accountIds = session.namespaces.near.accounts.map((x) => x.split(":")[2]);
-    const networkId = chainId.split(":")[1];
-    const permissions: Array<TransactionPermission> = [];
-
-    // Ensure the signerId is valid based on the accounts we have access to.
-    if (!accountIds.includes(transaction.signerId)) {
-      return permissions;
-    }
-
-    // Use FunctionCall key store before falling back to FullAccess.
-    const keyStores: Array<nearKeyStores.KeyStore> = [keyStore, this.vault];
-
-    for (let i = 0 ; i < keyStores.length; i += 1) {
-      const keyStore = keyStores[i];
-      const keyPair = await keyStore.getKey(networkId, transaction.signerId);
-
-      // Note: type for KeyStore.getKey is actually nullable.
-      if (!keyPair) {
-        continue;
-      }
-
-      const publicKey = keyPair.getPublicKey().toString();
-      const accessKey = await provider.query<AccessKeyView>({
-        request_type: "view_access_key",
-        finality: "final",
-        account_id: transaction.signerId,
-        public_key: publicKey,
-      });
-
-      if (this.validateAccessKey({ accessKey, transaction })) {
-        permissions.push({
-          accessKey,
-          signer: new InMemorySigner(keyStore),
-        });
-      }
-    }
-
-    return permissions;
-  }
-
-  async isElevatedPermission({
-    chainId,
-    topic,
-    transactions
-  }: IsElevatedPermissionParams) {
-    const transactionsWithPermissions = await Promise.all(transactions.map(async (transaction) => ({
-      transaction,
-      permissions: await this.getTransactionPermissions({ chainId, topic, transaction }),
-    })))
-
-    return transactionsWithPermissions.some(({ permissions }) => {
-      if (!permissions.length) {
-        throw new Error("Failed to find matching access key for transaction");
-      }
-
-      return !permissions.some(({ accessKey }) => accessKey.permission !== "FullAccess");
-    });
   }
 
   async signTransactions({

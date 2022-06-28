@@ -55,83 +55,9 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
 
         case NEAR_SIGNING_METHODS.NEAR_SIGN_IN:
         case NEAR_SIGNING_METHODS.NEAR_SIGN_OUT:
+        case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION:
+        case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS:
           return ModalStore.open('SessionSignNearModal', { requestEvent, requestSession })
-
-        case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
-          try {
-            const elevated = await nearWallet.isElevatedPermission({
-              chainId,
-              topic,
-              transactions: [{
-                signerId: request.params.signerId,
-                receiverId: request.params.receiverId,
-                actions: request.params.actions
-              }]
-            });
-
-            if (elevated) {
-              return ModalStore.open('SessionSignNearModal', {
-                requestEvent,
-                requestSession
-              });
-            }
-
-            return signClient.respond({
-              topic,
-              response: formatJsonRpcResult(
-                id,
-                await nearWallet.signAndSendTransaction({
-                  chainId,
-                  topic,
-                  transaction: {
-                    signerId: request.params.signerId,
-                    receiverId: request.params.receiverId,
-                    actions: request.params.actions
-                  }
-                })
-              )
-            });
-          } catch (err) {
-            console.log("err", err);
-            return signClient.reject({
-              id,
-              reason: ERROR.MISSING_OR_INVALID.format({ name: "transaction" })
-            });
-          }
-        }
-        case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS: {
-          try {
-            const elevated = await nearWallet.isElevatedPermission({
-              chainId,
-              topic,
-              transactions: request.params.transactions
-            });
-
-            if (elevated) {
-              return ModalStore.open('SessionSignNearModal', {
-                requestEvent,
-                requestSession
-              });
-            }
-
-            return signClient.respond({
-              topic,
-              response: formatJsonRpcResult(
-                id,
-                await nearWallet.signAndSendTransactions({
-                  chainId,
-                  topic,
-                  transactions: request.params.transactions
-                })
-              )
-            });
-          } catch (err) {
-            return signClient.reject({
-              id,
-              reason: ERROR.MISSING_OR_INVALID.format({ name: "transaction" })
-            });
-          }
-        }
       default:
         return ModalStore.open('SessionUnsuportedMethodModal', { requestEvent, requestSession })
     }
