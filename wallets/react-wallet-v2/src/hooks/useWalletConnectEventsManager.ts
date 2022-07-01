@@ -2,13 +2,11 @@ import { COSMOS_SIGNING_METHODS } from '@/data/COSMOSData'
 import { EIP155_SIGNING_METHODS } from '@/data/EIP155Data'
 import { SOLANA_SIGNING_METHODS } from '@/data/SolanaData'
 import { NEAR_SIGNING_METHODS } from '@/data/NEARData'
-import { nearWallet } from '@/utils/NearWalletUtil'
 import ModalStore from '@/store/ModalStore'
 import { signClient } from '@/utils/WalletConnectUtil'
 import { SignClientTypes } from '@walletconnect/types'
-import { ERROR } from '@walletconnect/utils'
 import { useCallback, useEffect } from 'react'
-import { formatJsonRpcResult } from "@json-rpc-tools/utils";
+import { approveNearRequest } from "@/utils/NearRequestHandler";
 
 export default function useWalletConnectEventsManager(initialized: boolean) {
   /******************************************************************************
@@ -58,6 +56,12 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
         case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION:
         case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS:
           return ModalStore.open('SessionSignNearModal', { requestEvent, requestSession })
+
+        case NEAR_SIGNING_METHODS.NEAR_GET_ACCOUNTS:
+          return signClient.respond({
+            topic,
+            response: await approveNearRequest(requestEvent)
+          })
       default:
         return ModalStore.open('SessionUnsuportedMethodModal', { requestEvent, requestSession })
     }

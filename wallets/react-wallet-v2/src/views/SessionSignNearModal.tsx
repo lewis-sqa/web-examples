@@ -6,6 +6,8 @@ import RequestModalContainer from '@/components/RequestModalContainer'
 import ModalStore from '@/store/ModalStore'
 import { approveNearRequest, rejectNearRequest } from '@/utils/NearRequestHandler'
 import { signClient } from '@/utils/WalletConnectUtil'
+import { NEAR_SIGNING_METHODS } from "@/data/NEARData";
+import { transactions } from "near-api-js";
 import { Button, Divider, Modal, Text } from '@nextui-org/react'
 import { Fragment } from 'react'
 
@@ -22,6 +24,40 @@ export default function SessionSignNearModal() {
   // Get required request data
   const { topic, params } = requestEvent
   const { request, chainId } = params
+
+  const formatParams = () => {
+    switch (params.request.method) {
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION:
+        return {
+          ...params,
+          request: {
+            ...params.request,
+            params: {
+              ...params.request.params,
+              transaction: transactions.Transaction.decode(
+                Buffer.from(params.request.params.transaction)
+              ),
+            }
+          }
+        }
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS:
+        return {
+          ...params,
+          request: {
+            ...params.request,
+            params: {
+              ...params.request.params,
+              transactions: params.request.params.transactions.map((tx) => {
+                return transactions.Transaction.decode(Buffer.from(tx));
+              }),
+            }
+          }
+        }
+      default:
+        return params;
+    }
+  }
+
 
   // Handle approve action (logic varies based on request method)
   async function onApprove() {
@@ -61,7 +97,7 @@ export default function SessionSignNearModal() {
 
         <Divider y={2} />
 
-        <RequestDataCard data={params} />
+        <RequestDataCard data={formatParams()} />
 
         <Divider y={2} />
 
