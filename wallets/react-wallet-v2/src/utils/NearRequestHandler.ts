@@ -22,8 +22,7 @@ export async function approveNearRequest(
       const accounts = await nearWallet.signIn({
         chainId,
         topic,
-        contractId: request.params.contractId,
-        methodNames: request.params.methodNames || [],
+        permission: request.params.permission,
         accounts: request.params.accounts,
       });
 

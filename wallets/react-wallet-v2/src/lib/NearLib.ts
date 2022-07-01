@@ -35,8 +35,7 @@ interface GetAccountsParams {
 interface SignInParams {
   chainId: string;
   topic: string;
-  contractId: string;
-  methodNames: Array<string>;
+  permission: nearTransactions.FunctionCallPermission;
   accounts: Array<Account>;
 }
 
@@ -202,7 +201,7 @@ export class NearWallet {
     );
   }
 
-  async signIn({ chainId, topic, contractId, methodNames, accounts }: SignInParams): Promise<Array<Account>> {
+  async signIn({ chainId, topic, permission, accounts }: SignInParams): Promise<Array<Account>> {
     if (!this.isAccountsValid(topic, accounts)) {
       throw new Error("Invalid accounts");
     }
@@ -221,7 +220,11 @@ export class NearWallet {
             actions: [
               nearTransactions.addKey(
                 utils.PublicKey.from(account.publicKey),
-                nearTransactions.functionCallAccessKey(contractId, methodNames)
+                nearTransactions.functionCallAccessKey(
+                  permission.receiverId,
+                  permission.methodNames,
+                  permission.allowance
+                )
               )
             ]
           }]
