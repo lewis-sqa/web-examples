@@ -54,31 +54,31 @@ export async function approveNearRequest(
 
       return formatJsonRpcResult(id, accounts);
     }
-    case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTION: {
       console.log("approve", { id, params });
 
       if (!chainId) {
         throw new Error("Invalid chain id");
       }
 
-      const res = await nearWallet.signAndSendTransaction({
+      const [signedTx] = await nearWallet.signTransactions({
         chainId,
         topic,
-        transaction: transactions.Transaction.decode(
+        transactions: [transactions.Transaction.decode(
           Buffer.from(request.params.transaction),
-        )
+        )]
       });
 
-      return formatJsonRpcResult(id, res);
+      return formatJsonRpcResult(id, signedTx.encode());
     }
-    case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS: {
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTIONS: {
       console.log("approve", { id, params });
 
       if (!chainId) {
         throw new Error("Invalid chain id");
       }
 
-      const res = await nearWallet.signAndSendTransactions({
+      const signedTxs = await nearWallet.signTransactions({
         chainId,
         topic,
         transactions: params.request.params.transactions.map((tx: Uint8Array) => {
@@ -86,7 +86,7 @@ export async function approveNearRequest(
         }),
       });
 
-      return formatJsonRpcResult(id, res);
+      return formatJsonRpcResult(id, signedTxs.map((x) => x.encode()));
     }
     default:
       throw new Error(ERROR.UNKNOWN_JSONRPC_METHOD.format().message)

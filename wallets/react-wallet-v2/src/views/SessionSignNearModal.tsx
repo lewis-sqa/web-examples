@@ -109,7 +109,7 @@ export default function SessionSignNearModal() {
 
   const formatParams = () => {
     switch (params.request.method) {
-      case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION:
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTION:
         return {
           ...params,
           request: {
@@ -120,7 +120,7 @@ export default function SessionSignNearModal() {
             }
           }
         }
-      case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS:
+      case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTIONS:
         return {
           ...params,
           request: {
