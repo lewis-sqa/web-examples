@@ -4,6 +4,7 @@ import { SignClientTypes } from '@walletconnect/types'
 import { ERROR } from '@walletconnect/utils'
 import { nearWallet } from '@/utils/NearWalletUtil'
 import { transactions } from "near-api-js";
+import { createAction } from "@near-wallet-selector/wallet-utils";
 
 export async function approveNearRequest(
   requestEvent: SignClientTypes.EventArguments['session_request']
@@ -71,6 +72,29 @@ export async function approveNearRequest(
 
       return formatJsonRpcResult(id, signedTx.encode());
     }
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTION: {
+      console.log("approve", { id, params });
+
+      if (!chainId) {
+        throw new Error("Invalid chain id");
+      }
+
+      const [transaction] = await nearWallet.createTransactions({
+        chainId,
+        transactions: [{
+          ...params.request.params.transaction,
+          actions: params.request.params.transaction.actions.map(createAction),
+        }]
+      });
+
+      const result = await nearWallet.signAndSendTransaction({
+        chainId,
+        topic,
+        transaction,
+      });
+
+      return formatJsonRpcResult(id, result);
+    }
     case NEAR_SIGNING_METHODS.NEAR_SIGN_TRANSACTIONS: {
       console.log("approve", { id, params });
 
@@ -87,6 +111,29 @@ export async function approveNearRequest(
       });
 
       return formatJsonRpcResult(id, signedTxs.map((x) => x.encode()));
+    }
+    case NEAR_SIGNING_METHODS.NEAR_SIGN_AND_SEND_TRANSACTIONS: {
+      console.log("approve", { id, params });
+
+      if (!chainId) {
+        throw new Error("Invalid chain id");
+      }
+
+      const transactions = await nearWallet.createTransactions({
+        chainId,
+        transactions: params.request.params.transactions.map((transaction) => ({
+          ...transaction,
+          actions: transaction.actions.map(createAction),
+        }))
+      });
+
+      const result = await nearWallet.signAndSendTransactions({
+        chainId,
+        topic,
+        transactions,
+      });
+
+      return formatJsonRpcResult(id, result);
     }
     default:
       throw new Error(ERROR.UNKNOWN_JSONRPC_METHOD.format().message)

@@ -12,6 +12,7 @@
     "@cosmjs/encoding": "0.28.4",
     "@cosmjs/proto-signing": "0.28.4",
     "@json-rpc-tools/utils": "1.7.6",
+    "@near-wallet-selector/wallet-utils": "^5.0.0",
     "@nextui-org/react": "1.0.8-beta.5",
     "@solana/web3.js": "1.43.0",
     "@walletconnect/sign-client": "2.0.0-beta.101",
